@@ -1,0 +1,43 @@
+<idea-plugin>
+  <id>com.your.company.unique.plugin.idorg.jetbrains.plugins.IdeaConEmu</id>
+  <name>IdeaConEmu</name>
+  <version>1.0</version>
+  <vendor email="milos@mstevanovic.net" url="http://www.stevium.com">Stevium</vendor>
+
+  <description><![CDATA[
+      Embedded ConEmu Terminal
+      <em>Plugin that enables running ConEmu inside IntelliJ IDEA</em>
+    ]]></description>
+
+  <change-notes><![CDATA[
+      Initial Implementation
+      <em>Integrated ConEmu within IntelliJ IDEA IDE</em>
+    ]]>
+  </change-notes>
+
+  <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
+  <idea-version since-build="173.0"/>
+
+  <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+       on how to target different products -->
+  <!-- uncomment to enable plugin in all products
+  <depends>com.intellij.modules.lang</depends>
+  -->
+
+  <extensions defaultExtensionNs="com.intellij">
+    <toolWindow id="IdeaConEmu" secondary="true" icon="/ideaconemu/plus.png" anchor="right"
+                factoryClass="ideaconemu.ConEmuToolWindowFactory"/>
+  </extensions>
+
+  <project-components>
+    <component>
+      <interface-class>ideaconemu.ConEmuView</interface-class>
+      <implementation-class>ideaconemu.ConEmuView</implementation-class>
+    </component>
+  </project-components>
+
+  <actions>
+    <!-- Add your actions here -->
+  </actions>
+
+</idea-plugin>
