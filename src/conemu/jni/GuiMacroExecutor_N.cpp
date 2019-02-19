@@ -44,11 +44,30 @@ JNIEXPORT jlong JNICALL Java_conemu_jni_GuiMacroExecutor_1N_N_1InitGuiMacroFn (J
 
 }
 
-JNIEXPORT jint JNICALL Java_conemu_jni_GuiMacroExecutor_1N_executeInProcess
-(JNIEnv *, jclass, jstring nConEmuPid, jstring asMacro) {
-	std::cout << "Hallo von JNI!" << std::endl;
+std::wstring Java_To_WStr(JNIEnv *env, jstring string)
+{
+    std::wstring value;
 
-	fnGuiMacro();
+    const jchar *raw = env->GetStringChars(string, 0);
+    jsize len = env->GetStringLength(string);
 
-	return -1;
+    value.assign(raw, raw + len);
+
+    env->ReleaseStringChars(string, raw);
+
+    return value;
 }
+
+JNIEXPORT jint JNICALL Java_conemu_jni_GuiMacroExecutor_1N_N_1ExecuteInProcess (JNIEnv *env, jobject, jstring nConEmuPid, jstring asMacro)
+{
+	int iRc;
+
+    const std::wstring wsInstance = Java_To_WStr(env, nConEmuPid);
+    const std::wstring wsMacro = Java_To_WStr(env, asMacro);
+
+    BSTR bsResult;
+    iRc = fnGuiMacro(wsInstance.c_str(), wsMacro.c_str(), &bsResult);
+
+	return iRc;
+}
+

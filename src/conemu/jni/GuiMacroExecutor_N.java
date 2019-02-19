@@ -5,35 +5,35 @@ public class GuiMacroExecutor_N {
         System.loadLibrary("GuiMacroExecutor_N");
     }
 
-    public long loadConEmuDll(String asLibrary) {
+    public Long loadConEmuDll(String asLibrary) {
         try {
             return N_LoadConEmuDll(asLibrary);
-        }  catch (UnsatisfiedLinkError ule) {
-            ule.printStackTrace();
+        }  catch (Exception e) {
+            e.printStackTrace();
         }
-        return -1;
+        return null;
     }
 
-    public long initGuiMacroFn() {
+    public Long initGuiMacroFn() {
         try {
             return N_InitGuiMacroFn();
-        }  catch (UnsatisfiedLinkError ule) {
-            ule.printStackTrace();
+        }  catch (Exception e) {
+            e.printStackTrace();
         }
-        return -1;
+        return null;
     }
 
-    public int executeInProcess(int nConEmuPid, String asMacro) {
+    public Integer executeInProcess(String nConEmuPid, String asMacro) {
        try {
            return N_ExecuteInProcess(nConEmuPid, asMacro);
-       }  catch (UnsatisfiedLinkError ule) {
-           ule.printStackTrace();
-           return -1;
+       }  catch (Exception e) {
+           e.printStackTrace();
+           return null;
        }
     }
 
     private final native long N_LoadConEmuDll(String asLibrary);
     private final native long N_InitGuiMacroFn();
-    private final native int N_ExecuteInProcess(int nConEmuPid, String asMacro);
+    private final native int N_ExecuteInProcess(String nConEmuPid, String asMacro);
 }
 

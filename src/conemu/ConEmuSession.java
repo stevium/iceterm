@@ -848,16 +848,19 @@ public class ConEmuSession {
         consoleProcessExited(this, new ConsoleProcessExitedEvent(nConsoleProcessExitCode));
     }
 
-    private void consoleProcessExited(ConEmuSession conEmuSession, ConsoleProcessExitedEvent consoleProcessExitedEvent) {
-        //TODO
+    private void consoleProcessExited(ConEmuSession source, ConsoleProcessExitedEvent event) {
+        if (emulatorClosedEventListeners != null)
+            for (ConsoleProcessExitedListener l : processExitedEventListeners) {
+                l.processExited(source, event);
+            }
     }
 
     private void addConsoleEmulatorClosedEventSink(ConsoleEmulatorClosedListener consoleEmulatorClosedEventSink) {
-        //TODO
+        this.emulatorClosedEventListeners.add(consoleEmulatorClosedEventSink);
     }
 
     private void addConsoleProcessExitedEventSink(ConsoleProcessExitedListener consoleProcessExitedEventSink) {
-        //TODO
+        processExitedEventListeners.add(consoleProcessExitedEventSink);
     }
 
     private void consoleEmulatorClosed(Object source, ConsoleEmulatorClosedEvent event) {
