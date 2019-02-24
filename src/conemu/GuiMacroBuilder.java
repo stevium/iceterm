@@ -5,7 +5,6 @@ import com.google.common.collect.Iterables;
 import conemu.util.tasks.Task;
 import org.apache.commons.lang.NullArgumentException;
 import org.jetbrains.annotations.NotNull;
-import sun.plugin.dom.exception.InvalidStateException;
 
 /**
  * Fluent API for constructing a GUI macro. Start with the running {@link ConEmuSession}, call {@link ConEmuSession#beginGuiMacro(String)}.
@@ -60,8 +59,8 @@ public class GuiMacroBuilder {
             throw new NullArgumentException(("parameters"));
 
         StringBuilder sb = new StringBuilder();
-        if(isAlphanumeric(sMacroName))
-            throw new InvalidStateException("The macro name must be alphanumeric.");
+        if(!isAlphanumeric(sMacroName))
+            throw new IllegalStateException("The macro name must be alphanumeric.");
         sb.append(sMacroName);
 
         for (String parameter: parameters) {

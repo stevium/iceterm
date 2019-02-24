@@ -30,7 +30,7 @@ public class GuiMacroExecutor implements AutoCloseable {
      * Inits the object, loads the extender DLL if known. If <code>NULL</code>, in-process operations will not be available.
      */
     public GuiMacroExecutor(@Nullable String asLibrary) {
-        if (asLibrary == null || StringUtils.isEmpty(asLibrary)) {
+        if (asLibrary != null && !StringUtils.isBlank(asLibrary)) {
             LoadConEmuDll(asLibrary);
         }
     }
@@ -39,7 +39,7 @@ public class GuiMacroExecutor implements AutoCloseable {
         if (asMacro == null)
             throw new NullArgumentException("asMacro");
         if (_hConEmuCd == null) //
-            throw new IllegalStateException("ConEmuCD war not loaded.");
+            throw new IllegalStateException("ConEmuCD was not loaded.");
 
         TaskCompletionSource<GuiMacroResult> tasker = new TaskCompletionSource<>();
 
@@ -49,13 +49,13 @@ public class GuiMacroExecutor implements AutoCloseable {
             if (_fnGuiMacro == null)
                 throw new IllegalStateException("The function pointer has not been bound.");
 
-            String sResult = null;
-            int iRc = guiMacroExecutor_N.executeInProcess(String.valueOf(nConEmuPid), asMacro);
+            StringBuffer sbResult = new StringBuffer();
+            int iRc = guiMacroExecutor_N.executeInProcess(String.valueOf(nConEmuPid), asMacro, sbResult);
 
             switch (iRc) {
                 case 0: // This is expected
                 case 133:
-                    tasker.setResult(new GuiMacroResult(true, sResult));
+                    tasker.setResult(new GuiMacroResult(true, sbResult.toString()));
                     break;
                 case 134:
                     tasker.setResult(new GuiMacroResult(false));

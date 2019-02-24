@@ -16,7 +16,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.security.CodeSource;
 import java.util.*;
 
 public class ConEmuStartInfo {
@@ -63,7 +64,7 @@ public class ConEmuStartInfo {
         Full
     }
 
-    private LogLevels logLevel;
+    private LogLevels logLevel = LogLevels.Disabled;
 
     private boolean isReadingAnsiStream;
 
@@ -161,7 +162,7 @@ public class ConEmuStartInfo {
         return sConEmuConsoleServerExecutablePath;
     }
 
-    public void setsConEmuConsoleServerExecutablePath(@NotNull String consoleServerExPath) {
+    public void setConEmuConsoleServerExecutablePath(@NotNull String consoleServerExPath) {
         if (consoleServerExPath == null)
             throw new NullArgumentException("consoleServerExPath");
         if ((consoleServerExPath.equals("")) && (sConEmuConsoleExtenderExecutablePath.equals("")))
@@ -194,7 +195,7 @@ public class ConEmuStartInfo {
             sConEmuConsoleServerExecutablePath = TryDeriveConEmuConsoleServerExecutablePath(sConEmuExecutablePath);
     }
 
-    @NotNull
+    @Nullable
     public ConsoleEmulatorClosedListener getConsoleEmulatorClosedEventSink() {
         return evtConsoleEmulatorClosedEventSink;
     }
@@ -329,18 +330,18 @@ public class ConEmuStartInfo {
     @NotNull
     private String InitConEmuLocation()
     {
-        File asmpath = null;
+        String dir = null;
+
         try {
-            asmpath = new File(ConEmuStartInfo.class.getProtectionDomain().getCodeSource().getLocation()
-        .toURI());
-        } catch (URISyntaxException e) {
+            dir = getContainingFolder(ConEmuStartInfo.class);
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        if(asmpath == null || !asmpath.exists())
-            return "";
-        String dir = asmpath.getParentFile().getName();
 
-        File candidate = new File(asmpath, ConEmuConstants.ConEmuExeName);
+        if(dir == null || dir.isEmpty())
+            return "";
+
+        File candidate = new File(dir, ConEmuConstants.ConEmuExeName);
         if(candidate.exists())
             return candidate.getPath();
 
@@ -402,5 +403,22 @@ public class ConEmuStartInfo {
             return candidate.getPath();
 
         return "";
+    }
+
+
+    private String getContainingFolder(Class aclass) throws Exception {
+        CodeSource codeSource = aclass.getProtectionDomain().getCodeSource();
+
+        File jarFile;
+
+        if (codeSource.getLocation() != null) {
+            jarFile = new File(codeSource.getLocation().toURI());
+        } else {
+            String path = aclass.getResource(aclass.getSimpleName() + ".class").getPath();
+//            String jarFilePath = path.substring(path.indexOf(":") + 1, path.indexOf("!"));
+//            jarFilePath = URLDecoder.decode(jarFilePath, "UTF-8");
+            jarFile = new File(path);
+        }
+        return jarFile.getParentFile().getAbsolutePath();
     }
 }

@@ -26,10 +26,10 @@ JNIEXPORT jlong JNICALL Java_conemu_jni_GuiMacroExecutor_1N_N_1InitGuiMacroFn
 /*
  * Class:     conemu_jni_GuiMacroExecutor_N
  * Method:    N_ExecuteInProcess
- * Signature: (Ljava/lang/String;Ljava/lang/String;)I
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/StringBuffer;)I
  */
 JNIEXPORT jint JNICALL Java_conemu_jni_GuiMacroExecutor_1N_N_1ExecuteInProcess
-  (JNIEnv *, jobject, jstring, jstring);
+  (JNIEnv *, jobject, jstring, jstring, jobject);
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,6 @@
 package conemu;
 
+import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.Kernel32;
 import com.sun.jna.platform.win32.WinDef;
 import conemu.AnsiLog.AnsiStreamChunkReceivedListener;
@@ -16,8 +17,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import sun.plugin.dom.exception.InvalidStateException;
 
+import javax.swing.*;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
@@ -33,6 +34,7 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.Timer;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -102,7 +104,7 @@ public class ConEmuSession {
      * The original parameters for this session; sealed, so they can't change after the session is run.
      */
     @NotNull
-    private ConEmuStartInfo startinfo;
+    private ConEmuStartInfo startInfo;
 
     /*
      * Task-based notification of the console emulator closing.
@@ -128,10 +130,10 @@ public class ConEmuSession {
             throw new NullArgumentException("startInfo");
         if (hostContext == null)
             throw new NullArgumentException("hostContext");
-        if (startinfo.getConsoleProcessCommandLine() == null || StringUtils.isEmpty(startInfo.getConsoleProcessCommandLine()))
+        if (startInfo.getConsoleProcessCommandLine() == null || StringUtils.isEmpty(startInfo.getConsoleProcessCommandLine()))
             throw new NullArgumentException("Cannot start a new console process for command line " + startInfo.getConsoleProcessCommandLine() + "because it's either NULL, or empty, or whitespace.");
 
-        this.startinfo = startInfo;
+        this.startInfo = startInfo;
         startInfo.MarkAsUsedUp(); // No more changes allowed in this copy
 
         // Directory for working files, +cleanup
@@ -173,7 +175,7 @@ public class ConEmuSession {
      */
     @NotNull
     public ConEmuStartInfo getStartInfo() {
-        return startinfo;
+        return startInfo;
     }
 
     /**
@@ -224,11 +226,11 @@ public class ConEmuSession {
 
         Process processConEmu = process;
         if (processConEmu == null)
-            throw new InvalidStateException("Cannot execute a macro because the console process is not running at the moment.");
+            throw new IllegalStateException("Cannot execute a macro because the console process is not running at the moment.");
 
         int pid = WinApi.Helpers.getProcessId(process);
 
-        return isExecutingGuiMacroInProcess ? guiMacroExecutor.executeInProcessAsync(pid, macrotext) : guiMacroExecutor.executeViaExtenderProcessAsync(macrotext, pid, startinfo.getConEmuConsoleExtenderExecetablePath());
+        return isExecutingGuiMacroInProcess ? guiMacroExecutor.executeInProcessAsync(pid, macrotext) : guiMacroExecutor.executeViaExtenderProcessAsync(macrotext, pid, startInfo.getConEmuConsoleExtenderExecetablePath());
     }
 
     /**
@@ -261,7 +263,7 @@ public class ConEmuSession {
     public Integer getConsoleProcessExitCode() {
         Integer nCode = nConsoleProcessExitCode;
         if (nCode == null)
-            throw new InvalidStateException("The exit code is not available yet because the console process is still running.");
+            throw new IllegalStateException("The exit code is not available yet because the console process is still running.");
         return nCode;
     }
 
@@ -433,7 +435,7 @@ public class ConEmuSession {
     @NotNull
     private CommandLineBuilder initMakeConEmuCommandLine(ConEmuStartInfo startinfo, HostContext hostcontext, AnsiLog ansilog, File dirLocalTempRoot) {
         if (startinfo == null)
-            throw new NullArgumentException("startinfo");
+            throw new NullArgumentException("startInfo");
         if (hostcontext == null)
             throw new NullArgumentException("hostcontext");
 
@@ -441,7 +443,7 @@ public class ConEmuSession {
 
         // This sets up hosting of ConEmu in our control
         cmdl.appendSwitch("-InsideWnd");
-        cmdl.appendFileNameIfNotNull("0x" + Long.toHexString(hostcontext.HWndParent.getPointer().getLong(0)));
+        cmdl.appendFileNameIfNotNull("0x" + Long.toHexString(Pointer.nativeValue(hostcontext.HWndParent.getPointer())));
 
         // Don't use keyboard hooks in ConEmu when embedded
         cmdl.appendSwitch("-NoKeyHooks");
@@ -466,7 +468,7 @@ public class ConEmuSession {
         cmdl.appendSwitch("-LoadCfgFile");
         cmdl.appendFileNameIfNotNull(initMakeConEmuCommandLine_EmitConfigFile(dirLocalTempRoot, startinfo, hostcontext));
 
-        if (startinfo.getStartupDirectory() == null || StringUtils.isEmpty(startinfo.getStartupDirectory())) {
+        if (startinfo.getStartupDirectory() != null && !StringUtils.isEmpty(startinfo.getStartupDirectory())) {
             cmdl.appendSwitch("-Dir");
             cmdl.appendFileNameIfNotNull(startinfo.getStartupDirectory());
         }
@@ -493,6 +495,7 @@ public class ConEmuSession {
                 break;
             case KeepConsoleEmulatorAndShowMessage:
                 sConsoleExitMode = "c";
+                break;
             default:
                 throw new IllegalArgumentException("ConEmuStartInfo::WhenConsoleProcessExits"
                         + startinfo.getWhenConsoleProcessExits() + "This is not a valid enum value.");
@@ -509,11 +512,11 @@ public class ConEmuSession {
         if (dirForConflgFile == null)
             throw new NullArgumentException("dirForConflgFile");
         if (startinfo == null)
-            throw new NullArgumentException("startinfo");
+            throw new NullArgumentException("startInfo");
         if (hostcontext == null)
             throw new NullArgumentException("hostcontext");
 
-        // Take baseline settings from the startinfo
+        // Take baseline settings from the startInfo
         Document xmlBase = startinfo.getBaseConfiguration();
         if (xmlBase.getDocumentElement() == null)
             throw new IllegalStateException("The BaseConfiguration parameter of the ConEmuSTartInfo must be a non-empty XmlDocument. This one does not have a root element.");
@@ -695,14 +698,21 @@ public class ConEmuSession {
         Thread t = new Thread(() -> {
             for (; ; ) {
                 // Might have been terminated on the main thread
-                if (nConsoleProcessExitCode != null)
-                    tasker.setError(null);
-                if (!process.isAlive())
-                    tasker.setError(null);
+                if (nConsoleProcessExitCode != null) {
+                    tasker.setResult(null);
+                    return;
+                }
+                if (!process.isAlive()) {
+                    tasker.setResult(null);
+                    return;
+                }
 
                 // Ask ConEmu for PID
                 try {
                     Task<Integer> getExitCode = GetInfoRoot.queryAsync(this).continueWith(task -> {
+                        if (task.getError() != null)
+                            throw task.getError();
+
                         GetInfoRoot rootinfo = task.getResult();
 
                         // Check if the process has exited
@@ -719,6 +729,9 @@ public class ConEmuSession {
                         return null;
                     });
                     getExitCode.waitForCompletion();
+                    if (getExitCode.getError() != null)
+                        throw getExitCode.getError();
+
                     // Do not wait before retrying
                     if (getExitCode.getResult() == -1) {
                         continue;
@@ -728,7 +741,7 @@ public class ConEmuSession {
                         tasker.setResult(getExitCode.getResult());
                         return;
                     }
-                } catch (InterruptedException e) {
+                } catch (Exception e) {
                     // Smth failed, wait and retry
                 }
 
@@ -756,25 +769,25 @@ public class ConEmuSession {
                 throw new IllegalStateException("Could not run the console emulator. The path to ConEmu.exe could not be detected.");
             if (!(new File(startInfo.getConEmuExecutablePath()).exists()))
                 throw new IllegalStateException("Missing ConEmu executable at location " + startInfo.getConEmuExecutablePath() + ".");
-            ProcessBuilder processBuilder = new ProcessBuilder();
-            processBuilder.command(startInfo.getConEmuExecutablePath(), cmdl.toString());
-
-            // Bind process termination
-            ProcessExitDetector processExitDetector = null;
+            Runtime rt = Runtime.getRuntime();
+            Process processNew;
             try {
-                processExitDetector = new ProcessExitDetector(processBuilder.start());
-                processExitDetector.addProcessListener(new ProcessListener() {
-                    @Override
-                    public void processFinished(Process process) {
-                        terminateLifetime();
-                        tryFireConsoleProcessExited(process.exitValue());
-                        consoleEmulatorClosed(this, null);
-                    }
-                });
-            } catch (IOException e) {
+                processNew = rt.exec(startInfo.getConEmuExecutablePath() + " " + cmdl.toString());
+            } catch (Exception e) {
                 throw new IllegalStateException("The process did not start.");
             }
-            return process;
+            // Bind process termination
+            ProcessExitDetector processExitDetector = new ProcessExitDetector(processNew);
+            processExitDetector.addProcessListener(new ProcessListener() {
+                @Override
+                public void processFinished(Process process) {
+                    terminateLifetime();
+                    tryFireConsoleProcessExited(process.exitValue());
+                    consoleEmulatorClosed(this, null);
+                }
+            });
+//            processExitDetector.start();
+            return processNew;
         } catch (Exception ex) {
             terminateLifetime();
             throw new IllegalStateException("Could not run the console emulator. " + ex.getMessage() + System.lineSeparator() + System.lineSeparator() + "Command:" + System.lineSeparator() + startInfo.getConEmuExecutablePath() + System.lineSeparator() + System.lineSeparator() + "Arguments:" + System.lineSeparator() + cmdl, ex);
@@ -803,9 +816,9 @@ public class ConEmuSession {
 
     private void initWireEvents(@NotNull ConEmuStartInfo startinfo) {
         if (startinfo == null)
-            throw new NullArgumentException("startinfo");
+            throw new NullArgumentException("startInfo");
 
-        // Advise events before they got chance to fire, use event sinks from startinfo for guaranteed delivery
+        // Advise events before they got chance to fire, use event sinks from startInfo for guaranteed delivery
         if (startinfo.getConsoleProcessExitedEventSink() != null)
             addConsoleProcessExitedEventSink(startinfo.getConsoleProcessExitedEventSink());
         if (startinfo.getConsoleEmulatorClosedEventSink() != null)
@@ -821,10 +834,10 @@ public class ConEmuSession {
     private void terminateLifetime() {
         List<Consumer> items = lifetime;
         ListIterator<Consumer> li = items.listIterator(items.size());
-        lifetime.clear();
         while (li.hasPrevious()) {
             li.previous().accept(null);
         }
+        lifetime.clear();
     }
 
     /**
@@ -833,7 +846,7 @@ public class ConEmuSession {
      * @param nConsoleProcessExitCode
      */
     private void tryFireConsoleProcessExited(Integer nConsoleProcessExitCode) {
-        if (getConsoleProcessExitCode() != null) // It's OK to call it from multiple places, e.g. when payload exit were detected and when ConEmu process itself exits
+        if (this.nConsoleProcessExitCode != null) // It's OK to call it from multiple places, e.g. when payload exit were detected and when ConEmu process itself exits
             return;
 
         // Make sure the whole ANSI log contents is pumped out before we notify user
@@ -849,17 +862,17 @@ public class ConEmuSession {
     }
 
     private void consoleProcessExited(ConEmuSession source, ConsoleProcessExitedEvent event) {
-        if (emulatorClosedEventListeners != null)
+        if (processExitedEventListeners != null)
             for (ConsoleProcessExitedListener l : processExitedEventListeners) {
                 l.processExited(source, event);
             }
     }
 
-    private void addConsoleEmulatorClosedEventSink(ConsoleEmulatorClosedListener consoleEmulatorClosedEventSink) {
+    public void addConsoleEmulatorClosedEventSink(ConsoleEmulatorClosedListener consoleEmulatorClosedEventSink) {
         this.emulatorClosedEventListeners.add(consoleEmulatorClosedEventSink);
     }
 
-    private void addConsoleProcessExitedEventSink(ConsoleProcessExitedListener consoleProcessExitedEventSink) {
+    public void addConsoleProcessExitedEventSink(ConsoleProcessExitedListener consoleProcessExitedEventSink) {
         processExitedEventListeners.add(consoleProcessExitedEventSink);
     }
 
@@ -910,7 +923,7 @@ public class ConEmuSession {
     /**
      * Covers parameters of the host control needed to run the session. {@link ConEmuStartInfo} tells what to run and how, while this class tells “where” and is not directly user-configurable, it's derived from the hosting control.
      */
-    public class HostContext {
+    public static class HostContext {
         public HostContext(@NotNull WinDef.HWND hWndParent, boolean isStatusbarVisibleInitial) {
             if (hWndParent == null)
                 throw new NullArgumentException("hWndParent");

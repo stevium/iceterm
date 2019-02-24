@@ -1,52 +1,49 @@
 package ideaconemu;
 
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.DataContext;
+import com.intellij.openapi.actionSystem.ex.AnActionListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
-import com.intellij.openapi.wm.ToolWindowAnchor;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.openapi.wm.ex.ToolWindowManagerListener;
-import com.intellij.openapi.wm.impl.StripeButton;
-import com.intellij.openapi.wm.impl.ToolWindowImpl;
-import com.intellij.openapi.wm.impl.WindowInfoImpl;
+import com.intellij.openapi.wm.impl.*;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import com.intellij.ui.content.ContentManager;
-import com.intellij.uiDesigner.core.GridLayoutManager;
+import conemu.ConEmuControl;
+import conemu.ConEmuStartInfo;
 import conemu.jni.GuiMacroExecutor_N;
-import conemu.util.WinApi;
+import org.jdom.Attribute;
+import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import sun.awt.windows.WComponentPeer;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
-import java.awt.peer.ContainerPeer;
-import java.io.IOException;
+import java.awt.event.HierarchyEvent;
+import java.awt.event.HierarchyListener;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class ConEmuView {
+
+    private final String conEmuExe = "C:\\Users\\Milos\\RiderProjects\\ConEmu\\Release\\ConEmu.exe";
+    private final String configFile = "C:\\Users\\Milos\\RiderProjects\\conemu-inside\\ConEmuInside\\bin\\Debug\\ConEmu.xml";
+    private final String conEmuCD = "C:\\Users\\Milos\\RiderProjects\\ConEmu\\Release\\ConEmu\\ConEmuCD64.dll";
+
+    private ConEmuToolWindow ideaConEmuToolWindow;
     private Project myProject;
     private ToolWindowImpl myToolWindow;
-    Label conEmuPanel = new Label();
-    Label conEmuPanel2 = new Label();
-    WComponentPeer peer;
-    long hwnd;
-    private ContainerPeer rootPeer;
-    private JPanel rootFrame;
-    private boolean visible = true;
-    private WComponentPeer peer2;
-    private long hwnd2;
-    private Process process;
-
-    String asLibrary = "C:\\Users\\Milos\\RiderProjects\\ConEmu\\Release\\ConEmu\\ConEmuCD64.dll";
+    private GuiMacroExecutor_N executor_n;
+    private ConEmuControl conEmuControl;
+    private Panel tempBackup;
+    private JFrame frame;
+    private Element state;
 
     public ConEmuView(@NotNull Project project) {
         myProject = project;
+        ideaConEmuToolWindow = new ConEmuToolWindow();
     }
 
     void initToolWindow(@NotNull ToolWindow toolWindow) {
@@ -59,6 +56,8 @@ public class ConEmuView {
         if (myToolWindow.getContentManager().getContentCount() == 0) {
             createNewSession();
         }
+
+        initGuiMacroExecutor();
     }
 
     public static ConEmuView getInstance(@NotNull Project project) {
@@ -68,180 +67,121 @@ public class ConEmuView {
     public void createNewSession() {
         ToolWindow window = ToolWindowManager.getInstance(myProject).getToolWindow(ConEmuToolWindowFactory.TOOL_WINDOW_ID);
         if (window != null && window.isAvailable()) {
-            // ensure TerminalToolWindowFactory.createToolWindowContent gets called
-//            ((ToolWindowImpl)window).ensureContentInitialized();
             createTerminalContent(myToolWindow);
             window.activate(null);
         }
     }
 
     private Content createTerminalContent(ToolWindowImpl toolWindow) {
-        ConEmuToolWindow ideaConEmuToolWindow = new ConEmuToolWindow();
         ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
         Content content = contentFactory.createContent(ideaConEmuToolWindow.getContent(), "", false);
         final ContentManager contentManager = toolWindow.getContentManager();
         contentManager.addContent(content);
 
-        ideaConEmuToolWindow.jpanel.add(conEmuPanel);
-        ideaConEmuToolWindow.jpanel2.add(conEmuPanel2);
-
-        toolWindow.getToolWindowManager().addToolWindowManagerListener(new ToolWindowManagerListener() {
-            @Override
-            public void toolWindowRegistered(@NotNull String id) {
-                System.out.println("toolWindowRegistered: " + id);
-            }
-
-            @Override
-            public void toolWindowUnregistered(@NotNull String id, @NotNull ToolWindow toolWindow) {
-                System.out.println("toolWindowUnregistered: " + id);
-            }
-
-            @Override
-            public void stateChanged() {
-            }
-        });
+        createConEmuControl();
+        state = myToolWindow.getToolWindowManager().getState();
 
         myProject.getMessageBus().connect().subscribe(ToolWindowManagerListener.TOPIC, new ToolWindowManagerListener() {
             @Override
             public void stateChanged() {
-                if (toolWindow.isVisible()) {
-                } else {
-
+                Element newState = myToolWindow.getToolWindowManager().getState();
+                if (isChanged(newState)) {
+                    ConEmuView.this.state = newState;
+                    saveTempHwnd();
                 }
             }
         });
 
-        ideaConEmuToolWindow.button2.addActionListener(new ActionListener() {
+        myProject.getMessageBus().connect().subscribe(AnActionListener.TOPIC, new AnActionListener() {
             @Override
-            public void actionPerformed(ActionEvent e) {
-//                addStripeButtonListener(toolWindow);
-//                JNIHelper jniHelper = new JNIHelper();
-//                JFrame frame = (JFrame) SwingUtilities.getRoot(myToolWindow.getComponent());
-//                Long parentHandle = ((WComponentPeer)frame.getPeer()).getHWnd();
-//                jniHelper.setParent(hwnd, parentHandle);
-//                frame.add(conEmuPanel);
-
-//                ideaConEmuToolWindow.button2.setText(Integer.toString(handle2));
-
-//                String asLibrary = "C:\\Users\\Milos\\RiderProjects\\conemu-inside\\ConEmuInside\\bin\\Debug\\ConEmu\\ConEmuCD64.dll";
-                GuiMacroExecutor_N executor_n = new GuiMacroExecutor_N();
-                long conEmuCDdll = executor_n.loadConEmuDll(asLibrary);
-                System.out.println("ConEmuDll loaded on address: " + conEmuCDdll);
-                long guiMacroFn = executor_n.initGuiMacroFn();
-                System.out.println("guiMacroFn loaded on address: " + guiMacroFn);
-                int processId = WinApi.Helpers.getProcessId(process);
-                executor_n.executeInProcess(String.valueOf(processId), "SetParentHWND " + hwnd2);
-
+            public void beforeActionPerformed(@NotNull AnAction action, @NotNull DataContext dataContext, AnActionEvent event) {
+                if (action.getClass().getName().contains(InternalDecorator.TOGGLE_FLOATING_MODE_ACTION_ID)) {
+                    saveTempHwnd();
+                }
             }
         });
 
-        ideaConEmuToolWindow.button1.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                peer = ((WComponentPeer) conEmuPanel.getPeer());
-                hwnd = peer.getHWnd();
-
-                peer2 = ((WComponentPeer) conEmuPanel2.getPeer());
-                hwnd2 = peer2.getHWnd();
-
-                ideaConEmuToolWindow.button1.setText(Long.toHexString(hwnd));
-                ideaConEmuToolWindow.button2.setText(Long.toHexString(hwnd2));
-
-
-                runConEmuInside(ideaConEmuToolWindow, hwnd);
-            }
-        });
-
-        ideaConEmuToolWindow.button3.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-//                hwnd = ((WComponentPeer)SwingUtilities.getRoot(myToolWindow.getComponent()).getPeer()).getHWnd();
-//                ideaConEmuToolWindow.button3.setText(Long.toHexString(hwnd));
-//                runConEmuInside(ideaConEmuToolWindow, hwnd);
-
-                GuiMacroExecutor_N executor_n = new GuiMacroExecutor_N();
-                long conEmuCDdll = executor_n.loadConEmuDll(asLibrary);
-                System.out.println("ConEmuDll loaded on address: " + conEmuCDdll);
-                long guiMacroFn = executor_n.initGuiMacroFn();
-                System.out.println("guiMacroFn loaded on address: " + guiMacroFn);
-                int processId = WinApi.Helpers.getProcessId(process);
-                executor_n.executeInProcess(String.valueOf(processId), "SetParentHWND " + hwnd);
-
-//                ideaConEmuToolWindow.jpanel.remove(conEmuPanel);
-            }
+        ideaConEmuToolWindow.button1.addActionListener(e -> {
         });
 
         return content;
     }
 
-    private void addStripeButtonListener(ToolWindowImpl toolWindow) {
-        try {
-            Field myId2StripeButtonField = toolWindow.getToolWindowManager().getClass().getDeclaredField("myId2StripeButton");
-            myId2StripeButtonField.setAccessible(true);
-            Map<String, StripeButton> myId2StripeButton = (Map<String, StripeButton>)myId2StripeButtonField.get(toolWindow.getToolWindowManager());
-            StripeButton stripeButton = myId2StripeButton.get(toolWindow.getId());
-            stripeButton.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
+    private boolean isChanged(Element newState) {
+        Element frame = state.getChild("frame");
+        Attribute x = frame.getAttribute("x");
+        Attribute y = frame.getAttribute("y");
+        Attribute width = frame.getAttribute("width");
+        Attribute height = frame.getAttribute("height");
+        Attribute extendedState = frame.getAttribute("extended-state");
+
+        Element newFrame = newState.getChild("frame");
+        Attribute newX = frame.getAttribute("x");
+        Attribute newY = frame.getAttribute("y");
+        Attribute newWidth = frame.getAttribute("width");
+        Attribute newHeight = frame.getAttribute("height");
+        Attribute newExtendedState = frame.getAttribute("extended-state");
+
+        return x.getValue().equals(newX.getValue()) ||
+                y.getValue().equals(newY.getValue()) ||
+                width.getValue().equals(newWidth.getValue()) ||
+                height.getValue().equals(newHeight.getValue()) ||
+                extendedState.getValue().equals(newExtendedState.getValue());
+    }
+
+    private void saveTempHwnd() {
+        if (conEmuControl.getSession() != null) {
+            Component root = SwingUtilities.getRoot(myToolWindow.getComponent());
+            if (root != null && frame == null) {
+                if (root instanceof IdeFrameImpl) {
+                    frame = (JFrame) root;
+                } else if (root instanceof FloatingDecorator) {
+                    frame = (JFrame) root.getParent();
+                } else {
                     try {
-                        Method method = myToolWindow.getToolWindowManager().getClass().getDeclaredMethod("getRegisteredInfoOrLogError", String.class);
-                        method.setAccessible(true);
-                        WindowInfoImpl returnValue = (WindowInfoImpl) method.invoke(myToolWindow.getToolWindowManager(), myToolWindow.getId());
-                        if(returnValue.isFloating()) {
-                            if (myToolWindow.isVisible()) {
-                                returnValue.setVisible(false);
-                                myToolWindow.getComponent().getParent().getParent().getParent().getParent().getParent().getParent().getParent().getParent().getParent().setVisible(false);
-                                myToolWindow.getComponent().getParent().getParent().getParent().setVisible(false);
-                            } else {
-                                returnValue.setVisible(true);
-                                myToolWindow.getComponent().getParent().getParent().getParent().getParent().getParent().getParent().getParent().getParent().getParent().setVisible(true);
-                                myToolWindow.getComponent().getParent().getParent().getParent().setVisible(true);
-                            }
-                        } else if(returnValue.isDocked()) {
-                            if (myToolWindow.isVisible()) {
-                                returnValue.setVisible(false);
-//                                myToolWindow.getComponent().getParent().getParent().getParent().getParent().setSize(new Dimension(0,0));
-                                myToolWindow.getComponent().getParent().getParent().getParent().getParent().getParent().setVisible(false);
-                            } else {
-                                returnValue.setVisible(true);
-//                                myToolWindow.getComponent().getParent().getParent().getParent().getParent().setSize(new Dimension(400,400));
-                                myToolWindow.getComponent().getParent().getParent().getParent().getParent().getParent().setVisible(true);
-                            }
-                        }
-                    } catch (NoSuchMethodException e1) {
-                        e1.printStackTrace();
-                    } catch (IllegalAccessException e1) {
-                        e1.printStackTrace();
-                    } catch (InvocationTargetException e1) {
-                        e1.printStackTrace();
+                        Field myParentField = root.getClass().getDeclaredField("myParent");
+                        myParentField.setAccessible(true);
+                        frame = (JFrame) myParentField.get(root);
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
                 }
-            });
-        } catch (NoSuchFieldException e1) {
-            e1.printStackTrace();
-        } catch (IllegalAccessException e1) {
-            e1.printStackTrace();
+                if (frame != null) {
+                    tempBackup = new Panel();
+                    tempBackup.setVisible(false);
+                    tempBackup.setLocation(400, 400);
+                    frame.add(tempBackup, BorderLayout.CENTER);
+                }
+            }
+            conEmuControl.setParentHWND(((WComponentPeer) tempBackup.getPeer()).getHWnd());
         }
     }
 
-    private ConEmuToolWindow runConEmuInside(ConEmuToolWindow ideaConEmuToolWindow, Long handle) {
-        Timer timer = new Timer();
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                try {
-                    process = new ProcessBuilder(
-                            "C:\\Users\\Milos\\RiderProjects\\ConEmu\\Release\\ConEmu.exe",
-                            "/NoKeyHooks",
-                            "/Single",
-                            "/InsideWnd", "0x" + Long.toHexString(handle),
-                            "/LoadCfgFile", "C:\\Users\\Milos\\RiderProjects\\conemu-inside\\ConEmuInside\\bin\\Debug\\ConEmu.xml"
-                    ).start();
-                } catch (IOException e1) {
-                    e1.printStackTrace();
-                }
-            }
-        }, 200);
-        return ideaConEmuToolWindow;
+    private ConEmuControl createConEmuControl() {
+        ideaConEmuToolWindow.jpanel.setBackground(Color.darkGray);
+        ConEmuStartInfo startinfo = new ConEmuStartInfo();
+        StringBuilder sbText = new StringBuilder();
+        startinfo.setConEmuExecutablePath(conEmuExe);
+        startinfo.setConEmuConsoleServerExecutablePath(conEmuCD);
+//        startinfo.setConsoleProcessCommandLine("ping 8.8.8.8");
+        startinfo.setLogLevel(ConEmuStartInfo.LogLevels.Basic);
+        startinfo.setAnsiStreamChunkReceivedEventSink((source, event) -> {
+            sbText.append(event.GetMbcsText());
+        });
+
+        conEmuControl = new ConEmuControl(startinfo);
+        conEmuControl.setMinimumSize(new Dimension(400, 400));
+        ideaConEmuToolWindow.jpanel.add(conEmuControl);
+        return conEmuControl;
     }
+
+    private GuiMacroExecutor_N initGuiMacroExecutor() {
+        this.executor_n = new GuiMacroExecutor_N();
+        long conEmuCDdll = executor_n.loadConEmuDll(conEmuCD);
+        System.out.println("ConEmuDll loaded on address: " + conEmuCDdll);
+        long guiMacroFn = executor_n.initGuiMacroFn();
+        System.out.println("guiMacroFn loaded on address: " + guiMacroFn);
+        return executor_n;
+    }
+
 }

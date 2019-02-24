@@ -30,7 +30,8 @@ public class AnsiLog {
         pumpStream();
         isDisposed = true;
         try {
-            fInputStream.close();
+            if(fInputStream != null)
+                fInputStream.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
