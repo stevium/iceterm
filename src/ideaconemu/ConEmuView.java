@@ -1,30 +1,32 @@
 package ideaconemu;
 
+import a.b.J;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.actionSystem.ex.AnActionListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowAnchor;
 import com.intellij.openapi.wm.ToolWindowManager;
+import com.intellij.openapi.wm.ToolWindowType;
 import com.intellij.openapi.wm.ex.ToolWindowManagerListener;
 import com.intellij.openapi.wm.impl.*;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import com.intellij.ui.content.ContentManager;
+import com.intellij.util.containers.hash.HashMap;
 import conemu.ConEmuControl;
 import conemu.ConEmuStartInfo;
 import conemu.jni.GuiMacroExecutor_N;
-import org.jdom.Attribute;
-import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import sun.awt.windows.WComponentPeer;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.HierarchyEvent;
-import java.awt.event.HierarchyListener;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.Map;
 
 public class ConEmuView {
 
@@ -39,7 +41,9 @@ public class ConEmuView {
     private ConEmuControl conEmuControl;
     private Panel tempBackup;
     private JFrame frame;
-    private Element state;
+    private WindowInfoImpl windowInfo;
+    private Map<String, WindowInfoImpl> registeredWindows = new HashMap<>();
+    private Map<String, WindowInfoImpl> mySameDockWindows = new HashMap<>();
 
     public ConEmuView(@NotNull Project project) {
         myProject = project;
@@ -79,14 +83,23 @@ public class ConEmuView {
         contentManager.addContent(content);
 
         createConEmuControl();
-        state = myToolWindow.getToolWindowManager().getState();
+        storeState();
 
         myProject.getMessageBus().connect().subscribe(ToolWindowManagerListener.TOPIC, new ToolWindowManagerListener() {
             @Override
+            public void toolWindowRegistered(@NotNull String id) {
+                registeredWindows.put(id, getWindowInfo(id));
+            }
+
+            @Override
+            public void toolWindowUnregistered(@NotNull String id, @NotNull ToolWindow toolWindow) {
+                registeredWindows.remove(id);
+            }
+
+            @Override
             public void stateChanged() {
-                Element newState = myToolWindow.getToolWindowManager().getState();
-                if (isChanged(newState)) {
-                    ConEmuView.this.state = newState;
+                if (windowInfoChanged()) {
+                    storeState();
                     saveTempHwnd();
                 }
             }
@@ -107,26 +120,76 @@ public class ConEmuView {
         return content;
     }
 
-    private boolean isChanged(Element newState) {
-        Element frame = state.getChild("frame");
-        Attribute x = frame.getAttribute("x");
-        Attribute y = frame.getAttribute("y");
-        Attribute width = frame.getAttribute("width");
-        Attribute height = frame.getAttribute("height");
-        Attribute extendedState = frame.getAttribute("extended-state");
+    private ToolWindowType getToolWindowType() {
+        Map<String, WindowInfoImpl> sameDockWindows = new HashMap<>();
+        String id = myToolWindow.getId();
+        ToolWindowType type = null;
+        try {
+            Field myId2InternalDecoratorField = myToolWindow.getToolWindowManager().getClass().getDeclaredField("myId2InternalDecorator");
+            myId2InternalDecoratorField.setAccessible(true);
+            Map<String, InternalDecorator> myId2InternalDecorator = (Map<String, InternalDecorator>) myId2InternalDecoratorField.get(myToolWindow.getToolWindowManager());
+            Field myId2FloatingDecoratorField = myToolWindow.getToolWindowManager().getClass().getDeclaredField("myId2FloatingDecorator");
+            myId2FloatingDecoratorField.setAccessible(true);
+            Map<String, InternalDecorator> myId2FloatingDecorator = (Map<String, InternalDecorator>) myId2FloatingDecoratorField.get(myToolWindow.getToolWindowManager());
+            Field myId2WindowedDecoratorField = myToolWindow.getToolWindowManager().getClass().getDeclaredField("myId2WindowedDecorator");
+            myId2WindowedDecoratorField.setAccessible(true);
+            Map<String, InternalDecorator> myId2WindowedDecorator = (Map<String, InternalDecorator>) myId2WindowedDecoratorField.get(myToolWindow.getToolWindowManager());
+            if (myId2FloatingDecorator.containsKey(id)) {
+                type = ToolWindowType.FLOATING;
+            } else if (myId2WindowedDecorator.containsKey(id)) {
+                type = ToolWindowType.WINDOWED;
+            } else if (myId2InternalDecorator.containsKey(id)) {
+                type = ToolWindowType.DOCKED;
+            } else {
+                type = ToolWindowType.SLIDING;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return type;
+    }
 
-        Element newFrame = newState.getChild("frame");
-        Attribute newX = frame.getAttribute("x");
-        Attribute newY = frame.getAttribute("y");
-        Attribute newWidth = frame.getAttribute("width");
-        Attribute newHeight = frame.getAttribute("height");
-        Attribute newExtendedState = frame.getAttribute("extended-state");
+    private Map<String, WindowInfoImpl> getSameDockWindows() {
+        Map<String, WindowInfoImpl> sameDockWindows = new HashMap<>();
+        try {
+            Field myId2InternalDecoratorField = null;
+            myId2InternalDecoratorField = myToolWindow.getToolWindowManager().getClass().getDeclaredField("myId2InternalDecorator");
+            myId2InternalDecoratorField.setAccessible(true);
+            Map<String, InternalDecorator> myId2InternalDecorator = (Map<String, InternalDecorator>) myId2InternalDecoratorField.get(myToolWindow.getToolWindowManager());
+            myId2InternalDecorator.forEach((key, value) -> {
+                WindowInfoImpl windowInfo = getWindowInfo(key);
+                if (windowInfo.getAnchor() == this.windowInfo.getAnchor() && windowInfo.isDocked() && windowInfo.isVisible()) {
+                    sameDockWindows.put(key, windowInfo);
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return sameDockWindows;
+    }
 
-        return x.getValue().equals(newX.getValue()) ||
-                y.getValue().equals(newY.getValue()) ||
-                width.getValue().equals(newWidth.getValue()) ||
-                height.getValue().equals(newHeight.getValue()) ||
-                extendedState.getValue().equals(newExtendedState.getValue());
+    private void storeState() {
+        this.windowInfo = (WindowInfoImpl) this.getWindowInfo(this.myToolWindow.getId()).clone();
+        this.windowInfo.setType(getToolWindowType());
+        mySameDockWindows = new HashMap<>();
+        this.getSameDockWindows().forEach((key, value) -> {
+            mySameDockWindows.put(key, value);
+        });
+    }
+
+    private boolean windowInfoChanged() {
+        WindowInfoImpl newWindowInfo = this.getWindowInfo(myToolWindow.getId());
+        boolean changed = false;
+        changed |= newWindowInfo.isVisible() != windowInfo.isVisible();
+        changed |= newWindowInfo.isAutoHide() != windowInfo.isAutoHide();
+        changed |= newWindowInfo.isMaximized() != windowInfo.isMaximized();
+        changed |= newWindowInfo.isRegistered() != windowInfo.isRegistered();
+        changed |= newWindowInfo.getAnchor() != windowInfo.getAnchor();
+        changed |= getToolWindowType() != windowInfo.getType();
+
+        changed |= !this.getSameDockWindows().keySet().equals(this.mySameDockWindows.keySet()) && this.windowInfo.isDocked();
+
+        return changed
     }
 
     private void saveTempHwnd() {
@@ -182,6 +245,18 @@ public class ConEmuView {
         long guiMacroFn = executor_n.initGuiMacroFn();
         System.out.println("guiMacroFn loaded on address: " + guiMacroFn);
         return executor_n;
+    }
+
+    private WindowInfoImpl getWindowInfo(String id) {
+        WindowInfoImpl returnValue = null;
+        try {
+            Method method = myToolWindow.getToolWindowManager().getClass().getDeclaredMethod("getRegisteredInfoOrLogError", String.class);
+            method.setAccessible(true);
+            returnValue = (WindowInfoImpl) method.invoke(myToolWindow.getToolWindowManager(), id);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return returnValue;
     }
 
 }
