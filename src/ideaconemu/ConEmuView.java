@@ -1,12 +1,13 @@
 package ideaconemu;
 
-import a.b.J;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.actionSystem.ex.AnActionListener;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.wm.*;
+import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowManager;
+import com.intellij.openapi.wm.ToolWindowType;
 import com.intellij.openapi.wm.ex.ToolWindowManagerListener;
 import com.intellij.openapi.wm.impl.*;
 import com.intellij.ui.content.Content;
@@ -21,7 +22,8 @@ import sun.awt.windows.WComponentPeer;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.AWTEventListener;
+import java.awt.event.FocusEvent;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -40,9 +42,7 @@ public class ConEmuView {
     private Panel tempBackup;
     private JFrame frame;
     private WindowInfoImpl windowInfo;
-    private Map<String, WindowInfoImpl> registeredWindows = new HashMap<>();
     private Map<String, WindowInfoImpl> mySameDockWindows = new HashMap<>();
-    private InternalDecorator internalDecorator;
 
     public ConEmuView(@NotNull Project project) {
         myProject = project;
@@ -83,18 +83,38 @@ public class ConEmuView {
 
         createConEmuControl();
         storeState();
+        addListeners();
 
+        return content;
+    }
+
+    private ConEmuControl createConEmuControl() {
+        ideaConEmuToolWindow.jpanel.setBackground(Color.darkGray);
+        ConEmuStartInfo startinfo = new ConEmuStartInfo();
+        StringBuilder sbText = new StringBuilder();
+        startinfo.setConEmuExecutablePath(conEmuExe);
+        startinfo.setConEmuConsoleServerExecutablePath(conEmuCD);
+//        startinfo.setConsoleProcessCommandLine("ping 8.8.8.8");
+        startinfo.setLogLevel(ConEmuStartInfo.LogLevels.Basic);
+        startinfo.setAnsiStreamChunkReceivedEventSink((source, event) -> {
+            sbText.append(event.GetMbcsText());
+        });
+
+        conEmuControl = new ConEmuControl(startinfo);
+        conEmuControl.setMinimumSize(new Dimension(400, 400));
+        ideaConEmuToolWindow.jpanel.add(conEmuControl);
+        return conEmuControl;
+    }
+
+    private void storeState() {
+        this.windowInfo = this.getWindowInfo(this.myToolWindow.getId()).copy();
+        this.windowInfo.setType(getToolWindowType());
+        mySameDockWindows = new HashMap<>();
+        this.getSameDockWindows().forEach((key, value) -> mySameDockWindows.put(key, value));
+    }
+
+    private void addListeners() {
         myProject.getMessageBus().connect().subscribe(ToolWindowManagerListener.TOPIC, new ToolWindowManagerListener() {
-            @Override
-            public void toolWindowRegistered(@NotNull String id) {
-                registeredWindows.put(id, getWindowInfo(id));
-            }
-
-            @Override
-            public void toolWindowUnregistered(@NotNull String id, @NotNull ToolWindow toolWindow) {
-                registeredWindows.remove(id);
-            }
-
             @Override
             public void stateChanged() {
                 if (windowInfoChanged()) {
@@ -104,42 +124,31 @@ public class ConEmuView {
             }
         });
 
-        IdeFocusManager.getInstance(this.myProject);
-
         myProject.getMessageBus().connect().subscribe(AnActionListener.TOPIC, new AnActionListener() {
             @Override
             public void beforeActionPerformed(@NotNull AnAction action, @NotNull DataContext dataContext, AnActionEvent event) {
-                if (action.getClass().getName().contains(InternalDecorator.TOGGLE_FLOATING_MODE_ACTION_ID)) {
+                if (action.getClass().getName().contains(InternalDecorator.TOGGLE_FLOATING_MODE_ACTION_ID)
+                && myToolWindow.getToolWindowManager().getActiveToolWindowId() == myToolWindow.getId()) {
                     saveTempHwnd();
                 }
             }
         });
 
-        AWTEventListener listener = new AWTEventListener() {
-            public void eventDispatched(AWTEvent event) {
-                    String id = ToolWindowManager.getActiveId();
-                    if (event.getID() == 1005) {
-                        FocusEvent focusEvent = (FocusEvent)event;
-                        if (isInActiveToolWindow(focusEvent.getSource()) && !isInActiveToolWindow(focusEvent.getOppositeComponent())) {
-//                            ToolWindow activeToolWindow = ToolWindowManager.getActiveToolWindow();
-                            ToolWindow activeToolWindow = myToolWindow;
-                            if (!focusEvent.isTemporary() && activeToolWindow != null && (activeToolWindow.isAutoHide() || activeToolWindow.getType() == ToolWindowType.SLIDING)) {
-                                saveTempHwnd();
-                            }
+        AWTEventListener listener = event -> {
+                if (event.getID() == 1005) {
+                    FocusEvent focusEvent = (FocusEvent) event;
+                    if (isInActiveToolWindow(focusEvent.getSource()) && !isInActiveToolWindow(focusEvent.getOppositeComponent())) {
+                        if (!focusEvent.isTemporary() && myToolWindow != null && (myToolWindow.isAutoHide() || myToolWindow.getType() == ToolWindowType.SLIDING)) {
+                            saveTempHwnd();
                         }
+                    }
                 }
 
-            }
         };
         AWTEventListener internalEventLostListener = Toolkit.getDefaultToolkit().getAWTEventListeners()[2];
         Toolkit.getDefaultToolkit().removeAWTEventListener(internalEventLostListener);
         Toolkit.getDefaultToolkit().addAWTEventListener(listener, 28L);
         Toolkit.getDefaultToolkit().addAWTEventListener(internalEventLostListener, 28L);
-        ideaConEmuToolWindow.button1.addActionListener(e -> {
-        });
-
-
-        return content;
     }
 
     public boolean isInActiveToolWindow(Object component) {
@@ -159,8 +168,8 @@ public class ConEmuView {
             return source != null;
         }
     }
+
     private ToolWindowType getToolWindowType() {
-        Map<String, WindowInfoImpl> sameDockWindows = new HashMap<>();
         String id = myToolWindow.getId();
         ToolWindowType type = null;
         try {
@@ -179,9 +188,6 @@ public class ConEmuView {
                 type = ToolWindowType.WINDOWED;
             } else if (myId2InternalDecorator.containsKey(id)) {
                 type = ToolWindowType.DOCKED;
-                if(internalDecorator != myId2InternalDecorator.get(id)) {
-                    internalDecorator = myId2InternalDecorator.get(id);
-                }
             } else {
                 type = ToolWindowType.SLIDING;
             }
@@ -194,8 +200,7 @@ public class ConEmuView {
     private Map<String, WindowInfoImpl> getSameDockWindows() {
         Map<String, WindowInfoImpl> sameDockWindows = new HashMap<>();
         try {
-            Field myId2InternalDecoratorField = null;
-            myId2InternalDecoratorField = myToolWindow.getToolWindowManager().getClass().getDeclaredField("myId2InternalDecorator");
+            Field myId2InternalDecoratorField = myToolWindow.getToolWindowManager().getClass().getDeclaredField("myId2InternalDecorator");
             myId2InternalDecoratorField.setAccessible(true);
             Map<String, InternalDecorator> myId2InternalDecorator = (Map<String, InternalDecorator>) myId2InternalDecoratorField.get(myToolWindow.getToolWindowManager());
             myId2InternalDecorator.forEach((key, value) -> {
@@ -210,15 +215,6 @@ public class ConEmuView {
         return sameDockWindows;
     }
 
-    private void storeState() {
-        this.windowInfo = this.getWindowInfo(this.myToolWindow.getId()).copy();
-        this.windowInfo.setType(getToolWindowType());
-        mySameDockWindows = new HashMap<>();
-        this.getSameDockWindows().forEach((key, value) -> {
-            mySameDockWindows.put(key, value);
-        });
-    }
-
     private boolean windowInfoChanged() {
         WindowInfoImpl newWindowInfo = this.getWindowInfo(myToolWindow.getId());
         boolean changed = false;
@@ -229,7 +225,6 @@ public class ConEmuView {
         changed |= newWindowInfo.getType() != windowInfo.getType();
 
         changed |= !this.getSameDockWindows().keySet().equals(this.mySameDockWindows.keySet()) && this.windowInfo.isDocked();
-
         return changed;
     }
 
@@ -259,24 +254,6 @@ public class ConEmuView {
             }
             conEmuControl.setParentHWND(((WComponentPeer) tempBackup.getPeer()).getHWnd());
         }
-    }
-
-    private ConEmuControl createConEmuControl() {
-        ideaConEmuToolWindow.jpanel.setBackground(Color.darkGray);
-        ConEmuStartInfo startinfo = new ConEmuStartInfo();
-        StringBuilder sbText = new StringBuilder();
-        startinfo.setConEmuExecutablePath(conEmuExe);
-        startinfo.setConEmuConsoleServerExecutablePath(conEmuCD);
-//        startinfo.setConsoleProcessCommandLine("ping 8.8.8.8");
-        startinfo.setLogLevel(ConEmuStartInfo.LogLevels.Basic);
-        startinfo.setAnsiStreamChunkReceivedEventSink((source, event) -> {
-            sbText.append(event.GetMbcsText());
-        });
-
-        conEmuControl = new ConEmuControl(startinfo);
-        conEmuControl.setMinimumSize(new Dimension(400, 400));
-        ideaConEmuToolWindow.jpanel.add(conEmuControl);
-        return conEmuControl;
     }
 
     private GuiMacroExecutor_N initGuiMacroExecutor() {
