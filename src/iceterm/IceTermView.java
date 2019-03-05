@@ -1,4 +1,4 @@
-package ideaconemu;
+package iceterm;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -28,13 +28,13 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Map;
 
-public class ConEmuView {
+public class IceTermView {
 
     private final String conEmuExe = "C:\\Users\\Milos\\RiderProjects\\ConEmu\\Release\\ConEmu.exe";
     private final String configFile = "C:\\Users\\Milos\\RiderProjects\\conemu-inside\\ConEmuInside\\bin\\Debug\\ConEmu.xml";
     private final String conEmuCD = "C:\\Users\\Milos\\RiderProjects\\ConEmu\\Release\\ConEmu\\ConEmuCD64.dll";
 
-    private ConEmuToolWindow ideaConEmuToolWindow;
+    private IceTermToolWindow ideaIceTermToolWindow;
     private Project myProject;
     private ToolWindowImpl myToolWindow;
     private GuiMacroExecutor_N executor_n;
@@ -44,9 +44,9 @@ public class ConEmuView {
     private WindowInfoImpl windowInfo;
     private Map<String, WindowInfoImpl> mySameDockWindows = new HashMap<>();
 
-    public ConEmuView(@NotNull Project project) {
+    public IceTermView(@NotNull Project project) {
         myProject = project;
-        ideaConEmuToolWindow = new ConEmuToolWindow();
+        ideaIceTermToolWindow = new IceTermToolWindow();
     }
 
     void initToolWindow(@NotNull ToolWindow toolWindow) {
@@ -63,12 +63,12 @@ public class ConEmuView {
         initGuiMacroExecutor();
     }
 
-    public static ConEmuView getInstance(@NotNull Project project) {
-        return project.getComponent(ConEmuView.class);
+    public static IceTermView getInstance(@NotNull Project project) {
+        return project.getComponent(IceTermView.class);
     }
 
     public void createNewSession() {
-        ToolWindow window = ToolWindowManager.getInstance(myProject).getToolWindow(ConEmuToolWindowFactory.TOOL_WINDOW_ID);
+        ToolWindow window = ToolWindowManager.getInstance(myProject).getToolWindow(IceTermToolWindowFactory.TOOL_WINDOW_ID);
         if (window != null && window.isAvailable()) {
             createTerminalContent(myToolWindow);
             window.activate(null);
@@ -77,7 +77,7 @@ public class ConEmuView {
 
     private Content createTerminalContent(ToolWindowImpl toolWindow) {
         ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
-        Content content = contentFactory.createContent(ideaConEmuToolWindow.getContent(), "", false);
+        Content content = contentFactory.createContent(ideaIceTermToolWindow.getContent(), "", false);
         final ContentManager contentManager = toolWindow.getContentManager();
         contentManager.addContent(content);
 
@@ -89,7 +89,7 @@ public class ConEmuView {
     }
 
     private ConEmuControl createConEmuControl() {
-        ideaConEmuToolWindow.jpanel.setBackground(Color.darkGray);
+        ideaIceTermToolWindow.jpanel.setBackground(Color.darkGray);
         ConEmuStartInfo startinfo = new ConEmuStartInfo();
         StringBuilder sbText = new StringBuilder();
         startinfo.setConEmuExecutablePath(conEmuExe);
@@ -102,7 +102,7 @@ public class ConEmuView {
 
         conEmuControl = new ConEmuControl(startinfo);
         conEmuControl.setMinimumSize(new Dimension(400, 400));
-        ideaConEmuToolWindow.jpanel.add(conEmuControl);
+        ideaIceTermToolWindow.jpanel.add(conEmuControl);
         return conEmuControl;
     }
 

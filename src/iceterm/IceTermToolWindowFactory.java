@@ -1,23 +1,16 @@
-package ideaconemu;
+package iceterm;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.*;
-import com.intellij.ui.content.*;
-import sun.awt.windows.WComponentPeer;
 
-import java.awt.*;
-import java.io.IOException;
-import java.util.Timer;
-import java.util.TimerTask;
-
-public class ConEmuToolWindowFactory implements ToolWindowFactory {
+public class IceTermToolWindowFactory implements ToolWindowFactory {
     public static final String TOOL_WINDOW_ID = "IdeaConEmu";
 
     public void createToolWindowContent(Project project, ToolWindow toolWindow) {
-        ConEmuView terminalView = ConEmuView.getInstance(project);
+        IceTermView terminalView = IceTermView.getInstance(project);
         terminalView.initToolWindow(toolWindow);
 
-//        ConEmuToolWindow ideaConEmuToolWindow = new ConEmuToolWindow();
+//        IceTermToolWindow ideaConEmuToolWindow = new IceTermToolWindow();
 //        ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
 //        Content content = contentFactory.createContent(ideaConEmuToolWindow.getContent(), "", false);
 //        toolWindow.getContentManager().addContent(content);

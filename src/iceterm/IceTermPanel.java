@@ -1,11 +1,11 @@
-package ideaconemu;
+package iceterm;
 
 import javax.swing.*;
 import java.awt.*;
 
-public class ConEmuPanel extends JPanel {
+public class IceTermPanel extends JPanel {
     Label hwLabel;
-    public ConEmuPanel() {
+    public IceTermPanel() {
         super();
 
         hwLabel = new Label("hello world");

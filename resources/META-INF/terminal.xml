@@ -1,0 +1,25 @@
+<idea-plugin>
+    <extensions defaultExtensionNs="com.intellij">
+        <toolWindow id="IdeaConEmu" secondary="true" icon="/iceterm/plus.png" anchor="right"
+                    factoryClass="iceterm.IceTermToolWindowFactory"/>
+
+        <!--<projectConfigurable groupId="tools" groupWeight="130" displayName="Terminal" id="terminal"-->
+                             <!--instance="iceterm.IceTermOptionsConfigurable"/>-->
+
+        <!--<applicationService serviceImplementation="org.jetbrains.plugins.terminal.TerminalOptionsProvider"/>-->
+
+        <!--<projectService serviceImplementation="org.jetbrains.plugins.terminal.TerminalProjectOptionsProvider"/>-->
+    </extensions>
+
+    <project-components>
+        <component>
+            <interface-class>iceterm.IceTermView</interface-class>
+            <implementation-class>iceterm.IceTermView</implementation-class>
+        </component>
+    </project-components>
+
+    <!--<extensionPoints>-->
+        <!--<extensionPoint qualifiedName="iceterm.localTerminalCustomizer"-->
+                        <!--interface="iceterm.LocalTerminalCustomizer"/>-->
+    <!--</extensionPoints>-->
+</idea-plugin>

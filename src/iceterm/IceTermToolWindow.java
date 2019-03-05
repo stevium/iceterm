@@ -1,8 +1,8 @@
-package ideaconemu;
+package iceterm;
 
 import javax.swing.*;
 
-public class ConEmuToolWindow {
+public class IceTermToolWindow {
     public JPanel myToolWindowContent;
     public JButton button1;
     public JPanel jpanel;
