@@ -3,3 +3,8 @@
 lib
 out
 Debug
+*.lib
+*.dll
+*.obj
+*.exp
+*.class
