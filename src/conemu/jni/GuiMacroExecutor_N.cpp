@@ -2,6 +2,8 @@
 #include "windows.h"
 #include <iostream>
 #include <comutil.h>
+#include <locale>
+#include <codecvt>
 
 typedef int (__stdcall *_GuiMacro)(LPCWSTR asInstance, LPCWSTR asMacro, BSTR* bsResult);
 
@@ -22,7 +24,7 @@ JNIEXPORT jlong JNICALL Java_conemu_jni_GuiMacroExecutor_1N_N_1LoadConEmuDll(JNI
 		return EXIT_FAILURE;
 	}
 
-	delete[] charArr;
+	//delete[] charArr;
 
 	return (jlong) hConEmuCD;
 }
@@ -45,14 +47,26 @@ JNIEXPORT jlong JNICALL Java_conemu_jni_GuiMacroExecutor_1N_N_1InitGuiMacroFn (J
 
 }
 
-std::wstring Java_To_WStr(JNIEnv *env, jstring string)
+std::wstring Java_To_WStr(JNIEnv *env, jstring javaString)
 {
-    std::wstring value;
-    const jchar *raw = env->GetStringChars(string, 0);
-    jsize len = env->GetStringLength(string);
-    value.assign(raw, raw + len);
-    env->ReleaseStringChars(string, raw);
-    return value;
+    //std::wstring value;
+    //const jchar *raw = env->GetStringChars(javaString, 0);
+    //jsize len = env->GetStringLength(javaString);
+    //value.assign(raw, raw + len);
+
+	const char *nativeString = env->GetStringUTFChars(javaString, 0);
+	const size_t cSize = strlen(nativeString)+1;
+    wchar_t* wc = new wchar_t[cSize];
+    mbstowcs (wc, nativeString, cSize);
+
+	std::cout << "char string: " << nativeString << std::endl;
+
+	std::wstring ws(wc);
+	std::string str(ws.begin(), ws.end());
+	std::cout << "wchar string: " << ws.c_str() << std::endl;
+
+    env->ReleaseStringUTFChars(javaString, nativeString);
+    return wc;
 }
 
 std::string utf8_encode(const std::wstring &wstr)
@@ -64,10 +78,26 @@ std::string utf8_encode(const std::wstring &wstr)
     return strTo;
 }
 
+std::wstring s2ws(const std::string& str)
+{
+    using convert_typeX = std::codecvt_utf8<wchar_t>;
+    std::wstring_convert<convert_typeX, wchar_t> converterX;
+
+    return converterX.from_bytes(str);
+}
+
+std::string ws2s(const std::wstring& wstr)
+{
+    using convert_typeX = std::codecvt_utf8<wchar_t>;
+    std::wstring_convert<convert_typeX, wchar_t> converterX;
+
+    return converterX.to_bytes(wstr);
+}
+
 JNIEXPORT jint JNICALL Java_conemu_jni_GuiMacroExecutor_1N_N_1ExecuteInProcess (JNIEnv *env, jobject, jstring nConEmuPid, jstring asMacro, jobject joResult)
 {
 	int iRc;
-	const char *sResult;
+	const char *csResult;
 	BSTR bsResult;
 
     const std::wstring wsInstance = Java_To_WStr(env, nConEmuPid);
@@ -76,8 +106,9 @@ JNIEXPORT jint JNICALL Java_conemu_jni_GuiMacroExecutor_1N_N_1ExecuteInProcess (
 
     jclass clazz = env->GetObjectClass(joResult);
     jmethodID appendId = env->GetMethodID(clazz, "append", "(Ljava/lang/String;)Ljava/lang/StringBuffer;");
-	sResult = utf8_encode(bsResult).c_str();
-    jstring jsResult = env->NewStringUTF(sResult);
+	std::string sResult = ws2s(bsResult);
+	csResult = sResult.c_str();
+    jstring jsResult = env->NewStringUTF(csResult);
 
     env->CallObjectMethod(joResult, appendId, jsResult);
 	return iRc;

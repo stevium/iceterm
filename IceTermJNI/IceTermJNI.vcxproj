@@ -72,6 +72,9 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IncludePath>C:\Users\Milos\IdeaProjects\intellij-sdk-docs\code_samples\IdeaConEmu\Debug;C:\Program Files %28x86%29\Java\jdk1.8.0_101\include\win32;C:\Program Files %28x86%29\Java\jdk1.8.0_101\include;C:\Users\Milos\IdeaProjects\intellij-sdk-docs\code_samples\IdeaConEmu\PipeServer;$(IncludePath)</IncludePath>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>C:\Users\Milos\IdeaProjects\intellij-sdk-docs\code_samples\IdeaConEmu\x64\Debug;C:\Program Files %28x86%29\Java\jdk1.8.0_101\include;C:\Program Files %28x86%29\Java\jdk1.8.0_101\include\win32;$(IncludePath)</IncludePath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -93,7 +96,12 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Program Files %28x86%29\Java\jdk1.8.0_101\include;C:\Users\Milos\IdeaProjects\intellij-sdk-docs\code_samples\IdeaConEmu\x64\Debug;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <Link>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Users\Milos\IdeaProjects\intellij-sdk-docs\code_samples\IdeaConEmu\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -126,12 +134,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\conemu\jni\conemu_jni_ConEmuPipeServer_N.h" />
     <ClInclude Include="..\src\conemu\jni\conemu_jni_GuiMacroExecutor_N.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\conemu\jni\ConEmuPipeServer_N.cpp" />
     <ClCompile Include="..\src\conemu\jni\GuiMacroExecutor_N.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PipeClient\PipeClient.vcxproj">
+      <Project>{88828a30-6fc3-4391-ab84-5594174ed296}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\PipeServer\PipeServer.vcxproj">
+      <Project>{761663c5-ed88-458c-8c31-388110f03b9c}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
