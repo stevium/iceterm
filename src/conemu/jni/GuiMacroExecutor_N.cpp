@@ -24,8 +24,6 @@ JNIEXPORT jlong JNICALL Java_conemu_jni_GuiMacroExecutor_1N_N_1LoadConEmuDll(JNI
 		return EXIT_FAILURE;
 	}
 
-	//delete[] charArr;
-
 	return (jlong) hConEmuCD;
 }
 
@@ -49,22 +47,10 @@ JNIEXPORT jlong JNICALL Java_conemu_jni_GuiMacroExecutor_1N_N_1InitGuiMacroFn (J
 
 std::wstring Java_To_WStr(JNIEnv *env, jstring javaString)
 {
-    //std::wstring value;
-    //const jchar *raw = env->GetStringChars(javaString, 0);
-    //jsize len = env->GetStringLength(javaString);
-    //value.assign(raw, raw + len);
-
 	const char *nativeString = env->GetStringUTFChars(javaString, 0);
 	const size_t cSize = strlen(nativeString)+1;
     wchar_t* wc = new wchar_t[cSize];
     mbstowcs (wc, nativeString, cSize);
-
-	std::cout << "char string: " << nativeString << std::endl;
-
-	std::wstring ws(wc);
-	std::string str(ws.begin(), ws.end());
-	std::cout << "wchar string: " << ws.c_str() << std::endl;
-
     env->ReleaseStringUTFChars(javaString, nativeString);
     return wc;
 }

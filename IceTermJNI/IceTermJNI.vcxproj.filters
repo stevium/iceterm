@@ -18,9 +18,15 @@
     <ClInclude Include="..\src\conemu\jni\conemu_jni_GuiMacroExecutor_N.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\conemu\jni\conemu_jni_ConEmuPipeServer_N.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\conemu\jni\GuiMacroExecutor_N.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\conemu\jni\ConEmuPipeServer_N.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
