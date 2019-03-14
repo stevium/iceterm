@@ -8,10 +8,13 @@ CPipeServer::CPipeServer(void)
 {
 }
 
-CPipeServer::CPipeServer(std::string& sName) : m_sPipeName(sName), 
-                                                m_hThread(NULL), 
-                                                m_nEvent(AU_INIT)
+CPipeServer::CPipeServer(std::string& sName, JNIEnv * env, jclass cls) 
+	: m_sPipeName(sName), 
+	m_hThread(NULL), 
+	m_nEvent(AU_INIT)
 {
+	jniEnv = env;
+	jClass = cls;
     m_buffer = (char*)calloc(AU_DATA_BUF, sizeof(char));
     Init();
 }
@@ -215,8 +218,12 @@ void CPipeServer::OnEvent(int nEventID)
 
         if(strcmp(sData.c_str(), "close") == 0)
             SetEvent(AU_CLOSE);
-        else
-            SetEvent(AU_IOREAD);
+		else {
+			auto method = jniEnv->GetStaticMethodID(jClass, "keyEventReceied", "(I)I");
+			jint result = jniEnv->CallStaticIntMethod(jClass, method, 17);
+			LOG << "static int method called from .cpp " << result << std::endl;
+			SetEvent(AU_IOREAD);
+		}
         break;
         }
     case AU_WRITE:

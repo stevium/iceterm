@@ -4,11 +4,11 @@ import javax.swing.*;
 
 public class ConEmuPipeServer_N {
     static {
-        System.loadLibrary("ConEmuPipeServer_N");
+        System.loadLibrary("IceTermJNI");
     }
 
     public static int keyEventReceied(int key) {
-        JOptionPane.showMessageDialog(null, key);
+        JOptionPane.showMessageDialog(null, "Received " + key);
         return key;
     }
 

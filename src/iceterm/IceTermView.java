@@ -16,6 +16,7 @@ import com.intellij.ui.content.ContentManager;
 import com.intellij.util.containers.hash.HashMap;
 import conemu.ConEmuControl;
 import conemu.ConEmuStartInfo;
+import conemu.jni.ConEmuPipeServer_N;
 import conemu.jni.GuiMacroExecutor_N;
 import org.jetbrains.annotations.NotNull;
 import sun.awt.windows.WComponentPeer;
@@ -61,6 +62,8 @@ public class IceTermView {
         }
 
         initGuiMacroExecutor();
+        ConEmuPipeServer_N pipeServer = new ConEmuPipeServer_N();
+        pipeServer.runPipeServer();
     }
 
     public static IceTermView getInstance(@NotNull Project project) {

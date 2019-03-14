@@ -3,7 +3,6 @@ package conemu.jni;
 public class GuiMacroExecutor_N {
     static {
         System.loadLibrary("IceTermJNI");
-//        System.loadLibrary("GuiMacroExecutor_N");
     }
 
     public Long loadConEmuDll(String asLibrary) {
@@ -23,7 +22,6 @@ public class GuiMacroExecutor_N {
         }
         return null;
     }
-
 
     public Integer executeInProcess(String nConEmuPid, String asMacro, StringBuffer result) {
         try {

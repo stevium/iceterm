@@ -11,6 +11,7 @@
 #include "windows.h"
 #include <string>
 #include "PipeConst.h"
+#include <jni.h>
 
 class CPipeServer
 {
@@ -20,7 +21,7 @@ public:
      * Constructor
      * @paramIn sName: Pipe name
      */
-    CPipeServer(std::string& sName);
+    CPipeServer(std::string& sName, JNIEnv *env, jclass cls);
 
     /**
      * Destructor
@@ -117,6 +118,8 @@ private:
     const std::string m_sPipeName; // Pipe name
     HANDLE m_hPipe;                 // Pipe handle
     HANDLE m_hThread;               // Pipe thread
+    JNIEnv * jniEnv;
+    jclass jClass;
     int    m_nEvent;                // Pipe event
     char* m_buffer;              // Buffer to hold data
 

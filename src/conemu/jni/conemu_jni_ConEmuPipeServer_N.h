@@ -12,8 +12,7 @@ extern "C" {
  * Method:    runPipeServer
  * Signature: ()I
  */
-JNIEXPORT jint JNICALL Java_conemu_jni_ConEmuPipeServer_1N_runPipeServer
-  (JNIEnv *, jclass);
+JNIEXPORT jint JNICALL Java_conemu_jni_ConEmuPipeServer_1N_runPipeServer(JNIEnv *, jclass);
 
 #ifdef __cplusplus
 }
