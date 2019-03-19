@@ -98,6 +98,11 @@ public:
      */
     bool Write();
 
+    /**
+     * Starts the pipe thread
+     */
+    void Run();
+
 private:
 
     /**
@@ -110,10 +115,6 @@ private:
      */
     void Init();
 
-    /**
-     * Starts the pipe thread
-     */
-    void Run();
 
     const std::string m_sPipeName; // Pipe name
     HANDLE m_hPipe;                 // Pipe handle

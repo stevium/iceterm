@@ -4,8 +4,19 @@
 #include <comutil.h>
 #include <locale>
 #include <codecvt>
+#include <CPipeServer.h>
+#include <CPipeClient.h>
+#include <stdio.h>
+#include <tlhelp32.h>
 
 typedef int (__stdcall *_GuiMacro)(LPCWSTR asInstance, LPCWSTR asMacro, BSTR* bsResult);
+
+typedef void(__cdecl * _FuncInitPipeClient)();
+_FuncInitPipeClient funcInitPipeClient;
+
+DWORD demoSetWindowsHookEx(LPCSTR pszLibFile, DWORD dwProcessId, const char *strProcName);
+
+DWORD createRemoteThreadW(PCWSTR pszLibFile, DWORD dwProcessId);
 
 HMODULE hConEmuCD;
 _GuiMacro fnGuiMacro;
@@ -100,3 +111,164 @@ JNIEXPORT jint JNICALL Java_conemu_jni_GuiMacroExecutor_1N_N_1ExecuteInProcess (
 	return iRc;
 }
 
+JNIEXPORT void JNICALL Java_conemu_jni_GuiMacroExecutor_1N_N_1RunPipeServer (JNIEnv *env, jclass cls)
+{
+    std::string sPipeName(PIPENAME);
+    CPipeServer* pServer = new CPipeServer(sPipeName, env, cls);
+	pServer->Run();
+}
+
+JNIEXPORT void JNICALL Java_conemu_jni_GuiMacroExecutor_1N_N_1RunPipeClient(JNIEnv *, jclass, jint nConEmuPid) {
+	try {
+		demoSetWindowsHookEx("C:\\Users\\Milos\\IdeaProjects\\intellij-sdk-docs\\code_samples\\IdeaConEmu\\x64\\Debug\\PipeClient.dll", DWORD((int)nConEmuPid), "ConEmu64.exe");
+		//createRemoteThreadW(L"C:\\Users\\Milos\\IdeaProjects\\intellij-sdk-docs\\code_samples\\IdeaConEmu\\x64\\Debug\\PipeClient.dll", DWORD((int)nConEmuPid));
+		//demoNtCreateThreadEx(L"C:\\Users\\Milos\\IdeaProjects\\intellij-sdk-docs\\code_samples\\IdeaConEmu\\x64\\Debug\\PipeClient.dll", DWORD((int)nConEmuPid));
+	}
+	catch (const std::exception& e) { // reference to the base of a polymorphic object
+		 std::cout << e.what(); // information from length_error printed
+	}
+	std::cout << "LOADED SUCCESSFULLYY " << (int)nConEmuPid << std::endl;
+}
+
+DWORD createRemoteThreadW(PCWSTR pszLibFile, DWORD dwProcessId)
+{
+	// Calculate the number of bytes needed for the DLL's pathname
+	DWORD dwSize = (lstrlenW(pszLibFile) + 1) * sizeof(wchar_t);
+
+	// Get process handle passing in the process ID
+	HANDLE hProcess = OpenProcess(
+		PROCESS_QUERY_INFORMATION |
+		PROCESS_CREATE_THREAD |
+		PROCESS_VM_OPERATION |
+		PROCESS_VM_WRITE,
+		FALSE, dwProcessId);
+	if (hProcess == NULL)
+	{
+		printf(TEXT("[-] Error: Could not open process for PID (%d).\n"), dwProcessId);
+		return(1);
+	}
+
+	// Allocate space in the remote process for the pathname
+	LPVOID pszLibFileRemote = (PWSTR)VirtualAllocEx(hProcess, NULL, dwSize, MEM_COMMIT, PAGE_READWRITE);
+	if (pszLibFileRemote == NULL)
+	{
+		printf(TEXT("[-] Error: Could not allocate memory inside PID (%d).\n"), dwProcessId);
+		return(1);
+	}
+
+	// Copy the DLL's pathname to the remote process address space
+	DWORD n = WriteProcessMemory(hProcess, pszLibFileRemote, (PVOID)pszLibFile, dwSize, NULL);
+	if (n == 0)
+	{
+		printf(TEXT("[-] Error: Could not write any bytes into the PID [%d] address space.\n"), dwProcessId);
+		return(1);
+	}
+
+	// Get the real address of LoadLibraryW in Kernel32.dll
+	PTHREAD_START_ROUTINE pfnThreadRtn = (PTHREAD_START_ROUTINE)GetProcAddress(GetModuleHandle(TEXT("Kernel32")), "LoadLibraryW");
+	if (pfnThreadRtn == NULL)
+	{
+		printf(TEXT("[-] Error: Could not find LoadLibraryA function inside kernel32.dll library.\n"));
+		return(1);
+	}
+
+	// Create a remote thread that calls LoadLibraryW(DLLPathname)
+	HANDLE hThread = CreateRemoteThread(hProcess, NULL, 0, pfnThreadRtn, pszLibFileRemote, 0, NULL);
+	if (hThread == NULL)
+	{
+		printf(TEXT("[-] Error: Could not create the Remote Thread.\n"));
+		return(1);
+	}
+	else
+		printf(TEXT("[+] Success: DLL injected via CreateRemoteThread().\n"));
+
+	// Wait for the remote thread to terminate
+	WaitForSingleObject(hThread, INFINITE);
+
+	// Free the remote memory that contained the DLL's pathname and close Handles
+	if (pszLibFileRemote != NULL)
+		VirtualFreeEx(hProcess, pszLibFileRemote, 0, MEM_RELEASE);
+
+	if (hThread != NULL)
+		CloseHandle(hThread);
+
+	if (hProcess != NULL)
+		CloseHandle(hProcess);
+
+	return(0);
+}
+
+DWORD getThreadID(DWORD pid)
+{
+	HANDLE h = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+	if (h != INVALID_HANDLE_VALUE)
+	{
+		THREADENTRY32 te;
+		te.dwSize = sizeof(te);
+		if (Thread32First(h, &te))
+		{
+			do
+			{
+				if (te.dwSize >= FIELD_OFFSET(THREADENTRY32, th32OwnerProcessID) + sizeof(te.th32OwnerProcessID))
+				{
+					if (te.th32OwnerProcessID == pid)
+					{
+						HANDLE hThread = OpenThread(READ_CONTROL, FALSE, te.th32ThreadID);
+						if (!hThread)
+							printf(TEXT("[-] Error: Couldn't get thread handle\n"));
+						else
+							return te.th32ThreadID;
+					}
+				}
+			} while (Thread32Next(h, &te));
+		}
+	}
+
+	CloseHandle(h);
+	return (DWORD)0;
+}
+
+DWORD demoSetWindowsHookEx(LPCSTR pszLibFile, DWORD dwProcessId, const char *strProcName)
+{
+	DWORD dwThreadId = getThreadID(dwProcessId);
+	if (dwThreadId == (DWORD)0)
+	{
+		printf(TEXT("[-] Error: Cannot find thread"));
+		return(1);
+	}
+
+//#ifdef _DEBUG
+	printf(TEXT("[+] Using Thread ID %u\n"), dwThreadId);
+//#endif
+
+
+	HMODULE dll = LoadLibraryEx(pszLibFile, NULL, DONT_RESOLVE_DLL_REFERENCES);
+	if (dll == NULL) 
+	{
+		printf(TEXT("[-] Error: The DLL could not be found.\n"));
+		return(1);
+	}
+
+	HOOKPROC addr = (HOOKPROC)GetProcAddress(dll, "keyHandler");
+	if (addr == NULL) 
+	{
+		printf(TEXT("[-] Error: The DLL exported function was not found.\n"));
+		return(1);
+	}
+
+	HWND targetWnd = FindWindow(NULL, strProcName);
+	GetWindowThreadProcessId(targetWnd, &dwProcessId);
+
+	HHOOK handle = SetWindowsHookEx(WH_KEYBOARD, addr, dll, dwThreadId);
+	if (handle == NULL)
+	{
+		printf(TEXT("[-] Error: The KEYBOARD could not be hooked.\n"));
+		return(1);
+	}
+	else
+	{
+		printf(TEXT("[+] Program successfully hooked."));
+	}
+
+	return(0);
+}

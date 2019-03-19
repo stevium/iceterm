@@ -47,7 +47,7 @@ public class ConEmuControl extends Canvas {
     private ConEmuStartInfo _startinfo;
 
     public ConEmuSession getSession() {
-        return session;
+        return _running;
     }
 
     public ConEmuControl(ConEmuStartInfo startinfo)

@@ -16,8 +16,10 @@ import com.intellij.ui.content.ContentManager;
 import com.intellij.util.containers.hash.HashMap;
 import conemu.ConEmuControl;
 import conemu.ConEmuStartInfo;
+import conemu.States;
 import conemu.jni.ConEmuPipeServer_N;
 import conemu.jni.GuiMacroExecutor_N;
+import conemu.util.WinApi;
 import org.jetbrains.annotations.NotNull;
 import sun.awt.windows.WComponentPeer;
 
@@ -31,7 +33,7 @@ import java.util.Map;
 
 public class IceTermView {
 
-    private final String conEmuExe = "C:\\Users\\Milos\\RiderProjects\\ConEmu\\Release\\ConEmu.exe";
+    private final String conEmuExe = "C:\\Users\\Milos\\RiderProjects\\ConEmu\\Release\\ConEmu64.exe";
     private final String configFile = "C:\\Users\\Milos\\RiderProjects\\conemu-inside\\ConEmuInside\\bin\\Debug\\ConEmu.xml";
     private final String conEmuCD = "C:\\Users\\Milos\\RiderProjects\\ConEmu\\Release\\ConEmu\\ConEmuCD64.dll";
 
@@ -62,8 +64,7 @@ public class IceTermView {
         }
 
         initGuiMacroExecutor();
-        ConEmuPipeServer_N pipeServer = new ConEmuPipeServer_N();
-        pipeServer.runPipeServer();
+
     }
 
     public static IceTermView getInstance(@NotNull Project project) {
@@ -75,6 +76,17 @@ public class IceTermView {
         if (window != null && window.isAvailable()) {
             createTerminalContent(myToolWindow);
             window.activate(null);
+            conEmuControl.addStateChangedListener(new ConEmuControl.StateChagedListener() {
+                @Override
+                public void stateChanged() {
+                    States state = conEmuControl.getState();
+                    if(state == States.ConsoleEmulatorWithConsoleProcess) {
+                        Process process = conEmuControl.getSession().getProcess();
+                        executor_n.runPipeServer();
+                        executor_n.runPipeClient(WinApi.Helpers.getProcessId(process));
+                    }
+                }
+            });
         }
     }
 

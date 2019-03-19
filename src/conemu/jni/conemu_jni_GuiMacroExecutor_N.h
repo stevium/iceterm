@@ -31,6 +31,22 @@ JNIEXPORT jlong JNICALL Java_conemu_jni_GuiMacroExecutor_1N_N_1InitGuiMacroFn
 JNIEXPORT jint JNICALL Java_conemu_jni_GuiMacroExecutor_1N_N_1ExecuteInProcess
   (JNIEnv *, jobject, jstring, jstring, jobject);
 
+/*
+ * Class:     conemu_jni_GuiMacroExecutor_N
+ * Method:    N_RunPipeServer
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_conemu_jni_GuiMacroExecutor_1N_N_1RunPipeServer
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     conemu_jni_GuiMacroExecutor_N
+ * Method:    N_RunPipeClient
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_conemu_jni_GuiMacroExecutor_1N_N_1RunPipeClient
+  (JNIEnv *, jclass, jint);
+
 #ifdef __cplusplus
 }
 #endif

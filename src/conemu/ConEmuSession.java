@@ -86,6 +86,11 @@ public class ConEmuSession {
      */
     private Integer nConsoleProcessExitCode;
 
+    @NotNull
+    public Process getProcess() {
+        return process;
+    }
+
     /*
      * The ConEmu process, even after it exits.
      */

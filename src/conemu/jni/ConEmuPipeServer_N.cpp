@@ -1,7 +1,12 @@
-#include "conemu_jni_GuiMacroExecutor_N.h"
-//#include <CPipeServer.h>
+#include "conemu_jni_ConEmuPipeServer_N.h"
+#include "windows.h"
+#include <iostream>
+#include <comutil.h>
+#include <locale>
+#include <codecvt>
 
-JNIEXPORT jint JNICALL Java_conemu_jni_ConEmuPipeServer_1N_runPipeServer (JNIEnv *env, jclass cls)
+JNIEXPORT jint JNICALL Java_conemu_jni_ConEmuPipeServer_1N_N_1RunPipeServer
+  (JNIEnv *, jclass)
 {
     //std::string sPipeName(PIPENAME);
     //CPipeServer* pServer = new CPipeServer(sPipeName, env, cls);

@@ -1,0 +1,1 @@
+// Technique 1: CreateRemoteThread

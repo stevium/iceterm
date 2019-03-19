@@ -15,18 +15,15 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CPipeClient.cpp">
+    <ClCompile Include="PipeClientDriver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PipeClientDriver.cpp">
+    <ClCompile Include="CPipeClient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CPipeClient.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PipeConst.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

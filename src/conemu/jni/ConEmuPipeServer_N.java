@@ -12,5 +12,9 @@ public class ConEmuPipeServer_N {
         return key;
     }
 
-    public static native int runPipeServer();
+    public int runPipeServer() {
+        return this.N_RunPipeServer();
+    }
+
+    private final native int N_RunPipeServer();
 }

@@ -9,10 +9,11 @@ extern "C" {
 #endif
 /*
  * Class:     conemu_jni_ConEmuPipeServer_N
- * Method:    runPipeServer
+ * Method:    N_RunPipeServer
  * Signature: ()I
  */
-JNIEXPORT jint JNICALL Java_conemu_jni_ConEmuPipeServer_1N_runPipeServer(JNIEnv *, jclass);
+JNIEXPORT jint JNICALL Java_conemu_jni_ConEmuPipeServer_1N_N_1RunPipeServer
+  (JNIEnv *, jobject);
 
 #ifdef __cplusplus
 }

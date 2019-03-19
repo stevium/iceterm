@@ -86,28 +86,29 @@ void CPipeServer::Init()
         OnEvent(AU_SERV_RUN);
     }
 
-    Run();
+    //Run();
 }
 
 void CPipeServer::Run()
 {
-    UINT uiThreadId = 0;
-    m_hThread = (HANDLE)_beginthreadex(NULL,
-        NULL,
-        PipeThreadProc,
-        this,
-        CREATE_SUSPENDED,
-        &uiThreadId);
+    //UINT uiThreadId = 0;
+    //m_hThread = (HANDLE)_beginthreadex(NULL,
+    //    NULL,
+    //    PipeThreadProc,
+    //    this,
+    //    CREATE_SUSPENDED,
+    //    &uiThreadId);
+	PipeThreadProc(this);
 
-    if(NULL == m_hThread)
-    {
-        OnEvent(AU_ERROR);
-    }
-    else
-    {
-        SetEvent(AU_INIT);
-        ::ResumeThread(m_hThread);
-    }
+    //if(NULL == m_hThread)
+    //{
+    //    OnEvent(AU_ERROR);
+    //}
+    //else
+    //{
+    //    SetEvent(AU_INIT);
+    //    ::ResumeThread(m_hThread);
+    //}
 }
 
 UINT32 __stdcall CPipeServer::PipeThreadProc(void* pParam)
@@ -211,21 +212,33 @@ void CPipeServer::OnEvent(int nEventID)
         }
 
     case AU_READ:
-        {
-        std::string sData;
-        GetData(sData);
-        LOG << "Message from client: " << sData << std::endl;
+	{
+		std::string sData;
+		GetData(sData);
+		//LOG << "Message from client: " << sData << std::endl;
 
-        if(strcmp(sData.c_str(), "close") == 0)
-            SetEvent(AU_CLOSE);
+		if (strcmp(sData.c_str(), "close") == 0)
+			SetEvent(AU_CLOSE);
 		else {
-			auto method = jniEnv->GetStaticMethodID(jClass, "keyEventReceied", "(I)I");
-			jint result = jniEnv->CallStaticIntMethod(jClass, method, 17);
-			LOG << "static int method called from .cpp " << result << std::endl;
+
+		}
+		try {
+			//LOG << "Getting static method ID" << " for class " << jClass << " env " << jniEnv << std::endl;
+			//auto method = jniEnv->GetMethodID(jClass, "keyEventReceived", "(I)I");
+			auto method = jniEnv->GetStaticMethodID(jClass, "keyEventReceived", "(Ljava/lang/String;)V");
+			//LOG << "Calling meghod with id " << method << " for class " << jClass << " env " << jniEnv << std::endl;
+			const char * charData = sData.c_str();
+			jstring data = jniEnv->NewStringUTF(charData);
+			jniEnv->CallStaticVoidMethod(jClass, method, data);
+			//LOG << "static int method called from .cpp " << std::endl;
 			SetEvent(AU_IOREAD);
 		}
-        break;
-        }
+		catch (const std::exception& e) { // reference to the base of a polymorphic object
+			std::cout << e.what(); // information from length_error printed
+
+		}
+		break;
+	}
     case AU_WRITE:
         LOG << "Wrote data to pipe" << std::endl;
         SetEvent(AU_IOREAD);
