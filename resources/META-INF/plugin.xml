@@ -14,53 +14,33 @@
     ]]>
   </change-notes>
 
-  <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
   <idea-version since-build="173.0"/>
-
-  <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
-       on how to target different products -->
-  <!-- uncomment to enable plugin in all products
-  <depends>com.intellij.modules.lang</depends>
-  -->
-
-  <!--<extensions defaultExtensionNs="com.intellij">-->
-    <!--<toolWindow id="IdeaConEmu" secondary="true" icon="/iceterm/plus.png" anchor="right"-->
-                <!--factoryClass="iceterm.IceTermToolWindowFactory"/>-->
-  <!--</extensions>-->
-
-  <!--<project-components>-->
-    <!--<component>-->
-      <!--<interface-class>iceterm.IceTermView</interface-class>-->
-      <!--<implementation-class>iceterm.IceTermView</implementation-class>-->
-    <!--</component>-->
-  <!--</project-components>-->
-    <!--<xi:include href="terminal.xml"></xi:include>-->
 
   <extensions defaultExtensionNs="com.intellij">
     <toolWindow id="IdeaConEmu" secondary="true" icon="/iceterm/plus.png" anchor="right"
-                factoryClass="iceterm.IceTermToolWindowFactory"/>
+                factoryClass="org.iceterm.IceTermToolWindowFactory"/>
 
     <projectConfigurable groupId="tools" groupWeight="130" displayName="IceTerm" id="iceterm"
-    instance="iceterm.IceTermOptionsConfigurable"/>
+    instance="org.iceterm.IceTermOptionsConfigurable"/>
 
-    <applicationService serviceImplementation="iceterm.IceTermOptionsProvider"/>
+    <applicationService serviceImplementation="org.iceterm.IceTermOptionsProvider"/>
 
-    <projectService serviceImplementation="iceterm.IceTermProjectOptionsProvider"/>
+    <projectService serviceImplementation="org.iceterm.IceTermProjectOptionsProvider"/>
   </extensions>
 
   <project-components>
     <component>
-      <interface-class>iceterm.IceTermView</interface-class>
-      <implementation-class>iceterm.IceTermView</implementation-class>
+      <interface-class>org.iceterm.IceTermView</interface-class>
+      <implementation-class>org.iceterm.IceTermView</implementation-class>
     </component>
   </project-components>
 
   <extensionPoints>
   <extensionPoint qualifiedName="iceterm.localTerminalCustomizer"
-  interface="iceterm.LocalTerminalCustomizer"/>
+  interface="org.iceterm.LocalTerminalCustomizer"/>
   </extensionPoints>
+
   <actions>
-    <!-- Add your actions here -->
   </actions>
 
 </idea-plugin>

@@ -1,7 +1,7 @@
 <idea-plugin>
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="IdeaConEmu" secondary="true" icon="/iceterm/plus.png" anchor="right"
-                    factoryClass="iceterm.IceTermToolWindowFactory"/>
+                    factoryClass="org.iceterm.IceTermToolWindowFactory"/>
 
         <!--<projectConfigurable groupId="tools" groupWeight="130" displayName="Terminal" id="terminal"-->
                              <!--instance="iceterm.IceTermOptionsConfigurable"/>-->
@@ -13,8 +13,8 @@
 
     <project-components>
         <component>
-            <interface-class>iceterm.IceTermView</interface-class>
-            <implementation-class>iceterm.IceTermView</implementation-class>
+            <interface-class>org.iceterm.IceTermView</interface-class>
+            <implementation-class>org.iceterm.IceTermView</implementation-class>
         </component>
     </project-components>
 
