@@ -8,3 +8,4 @@ Debug
 *.obj
 *.exp
 *.class
+cmake-build-debug
