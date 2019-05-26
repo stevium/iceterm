@@ -4,6 +4,7 @@ project(iceterm)
 set(CMAKE_CXX_STANDARD 14)
 
 include_directories(jni)
+include_directories(jni/include)
 include_directories(conemuhook/include)
 
 add_library(iceterm SHARED
@@ -11,8 +12,30 @@ add_library(iceterm SHARED
         jni/org_iceterm_ceintegration_GuiMacroExecutor.h
         conemuhook/conemupipe/pipe_server.cpp
         conemuhook/conemupipe/pipe_server.h
+        conemuhook/conemupipe/pipe_client.cpp
+        conemuhook/conemupipe/pipe_client.h
+        conemuhook/logger.h
+        conemuhook/logger.cpp
+        conemuhook/input_helper.h
+        conemuhook/input_helper.cpp
+        conemuhook/input_hook.cpp
+        conemuhook/system_properties.cpp
+        conemuhook/post_event.cpp
         jni/org_iceterm_cehook_ConEmuHook.cpp
-        jni/org_iceterm_cehook_ConEmuHook.h jni/jni_EventDispacher.cpp jni/jni_EventDispacher.h)
+        jni/org_iceterm_cehook_ConEmuHook.h
+        jni/jni_Globals.cpp
+        jni/jni_Globals.h
+        jni/jni_Converter.cpp
+        jni/jni_Converter.h
+        jni/jni_Logger.cpp
+        jni/jni_Logger.h
+        jni/jni_Errors.cpp
+        jni/jni_Errors.h
+        jni/jni_EventDispatcher.cpp
+        jni/jni_EventDispatcher.h
+        jni/jni_Load.cpp
+        jni/org_jnativehook_GlobalScreen.cpp
+        )
 
 add_library(ConEmuHook SHARED
         conemuhook/conemupipe/pipe_client.cpp
