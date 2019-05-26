@@ -1,0 +1,8 @@
+//
+// Created by Milos on 5/26/19.
+//
+
+#ifndef ICETERM_JNI_EVENTDISPACHER_H
+#define ICETERM_JNI_EVENTDISPACHER_H
+
+#endif //ICETERM_JNI_EVENTDISPACHER_H

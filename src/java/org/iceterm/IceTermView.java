@@ -5,6 +5,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.actionSystem.ex.AnActionListener;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.wm.IdeFrame;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.openapi.wm.ToolWindowType;
@@ -14,13 +15,17 @@ import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import com.intellij.ui.content.ContentManager;
 import com.intellij.util.containers.hash.HashMap;
-import org.iceterm.integration.ConEmuControl;
-import org.iceterm.integration.ConEmuStartInfo;
-import org.iceterm.integration.States;
-import org.iceterm.jni.GuiMacroExecutor_N;
+import com.sun.jna.Pointer;
+import com.sun.jna.platform.win32.*;
+import org.iceterm.ceintegration.ConEmuControl;
+import org.iceterm.ceintegration.ConEmuStartInfo;
+import org.iceterm.ceintegration.States;
+import org.iceterm.cehook.ConEmuHook;
+import org.iceterm.util.User32Ext;
 import org.iceterm.util.WinApi;
 import org.jetbrains.annotations.NotNull;
 import sun.awt.windows.WComponentPeer;
+import sun.awt.windows.WWindowPeer;
 
 import javax.swing.*;
 import java.awt.*;
@@ -29,6 +34,10 @@ import java.awt.event.FocusEvent;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Map;
+
+import static com.sun.jna.platform.win32.User32.INSTANCE;
+import static com.sun.jna.platform.win32.WinUser.SM_CXSCREEN;
+import static com.sun.jna.platform.win32.WinUser.SM_CYSCREEN;
 
 public class IceTermView {
 
@@ -39,12 +48,12 @@ public class IceTermView {
     private IceTermToolWindow ideaIceTermToolWindow;
     private Project myProject;
     private ToolWindowImpl myToolWindow;
-    private GuiMacroExecutor_N executor_n;
     private ConEmuControl conEmuControl;
     private Panel tempBackup;
     private JFrame frame;
     private WindowInfoImpl windowInfo;
     private Map<String, WindowInfoImpl> mySameDockWindows = new HashMap<>();
+    private WinDef.HWND foregroundWindow;
 
     public IceTermView(@NotNull Project project) {
         myProject = project;
@@ -62,8 +71,6 @@ public class IceTermView {
             createNewSession();
         }
 
-        initGuiMacroExecutor();
-
     }
 
     public static IceTermView getInstance(@NotNull Project project) {
@@ -79,10 +86,13 @@ public class IceTermView {
                 @Override
                 public void stateChanged() {
                     States state = conEmuControl.getState();
-                    if(state == States.ConsoleEmulatorWithConsoleProcess) {
+                    if (state == States.ConsoleEmulatorWithConsoleProcess) {
                         Process process = conEmuControl.getSession().getProcess();
-                        executor_n.runPipeServer();
-                        executor_n.runPipeClient(WinApi.Helpers.getProcessId(process));
+                        ConEmuHook hook = new ConEmuHook();
+                        System.out.println("Setting up native hook hook");
+                        Window frame = IdeFrameImpl.getWindows()[2];
+                        long lHwnd = ((WWindowPeer) frame.getPeer()).getHWnd();
+                       hook.run(WinApi.Helpers.getProcessId(process), lHwnd);
                     }
                 }
             });
@@ -142,22 +152,33 @@ public class IceTermView {
             @Override
             public void beforeActionPerformed(@NotNull AnAction action, @NotNull DataContext dataContext, AnActionEvent event) {
                 if (action.getClass().getName().contains(InternalDecorator.TOGGLE_FLOATING_MODE_ACTION_ID)
-                && myToolWindow.getToolWindowManager().getActiveToolWindowId() == myToolWindow.getId()) {
+                        && myToolWindow.getToolWindowManager().getActiveToolWindowId() == myToolWindow.getId()) {
                     saveTempHwnd();
                 }
             }
         });
 
         AWTEventListener listener = event -> {
-                if (event.getID() == 1005) {
-                    FocusEvent focusEvent = (FocusEvent) event;
-                    if (isInActiveToolWindow(focusEvent.getSource()) && !isInActiveToolWindow(focusEvent.getOppositeComponent())) {
-                        if (!focusEvent.isTemporary() && myToolWindow != null && (myToolWindow.isAutoHide() || myToolWindow.getType() == ToolWindowType.SLIDING)) {
-                            saveTempHwnd();
-                        }
+            if (event.getID() == 1005) {
+                FocusEvent focusEvent = (FocusEvent) event;
+                if (isInActiveToolWindow(focusEvent.getSource()) && !isInActiveToolWindow(focusEvent.getOppositeComponent())) {
+                    if (!focusEvent.isTemporary() && myToolWindow != null && (myToolWindow.isAutoHide() || myToolWindow.getType() == ToolWindowType.SLIDING)) {
+                        saveTempHwnd();
                     }
                 }
-
+                IdeFrame lastFocusedFrame = myToolWindow.getToolWindowManager().getFocusManager().getLastFocusedFrame();
+                if (lastFocusedFrame != null) {
+                    long lHwnd = ((WWindowPeer) ((IdeFrameImpl) lastFocusedFrame).getPeer()).getHWnd();
+                    WinDef.HWND handle = new WinDef.HWND(Pointer.createConstant(lHwnd));
+//                    if (conEmuControl != null) {
+                    if (false) {
+                        foregroundWindow = INSTANCE.GetForegroundWindow();
+                        User32Ext.INSTANCE.SetForegroundWindow(conEmuControl.getHandle());
+                        User32Ext.INSTANCE.BringWindowToTop(handle);
+                        User32Ext.INSTANCE.SetForegroundWindow(handle);
+                    }
+                }
+            }
         };
         AWTEventListener internalEventLostListener = Toolkit.getDefaultToolkit().getAWTEventListeners()[2];
         Toolkit.getDefaultToolkit().removeAWTEventListener(internalEventLostListener);
@@ -165,8 +186,9 @@ public class IceTermView {
         Toolkit.getDefaultToolkit().addAWTEventListener(internalEventLostListener, 28L);
     }
 
+
     public boolean isInActiveToolWindow(Object component) {
-        JComponent source = component instanceof JComponent ? (JComponent)component : null;
+        JComponent source = component instanceof JComponent ? (JComponent) component : null;
 //        ToolWindow activeToolWindow = ToolWindowManager.getActiveToolWindow();
         ToolWindow activeToolWindow = this.myToolWindow;
         if (activeToolWindow == null) {
@@ -174,8 +196,8 @@ public class IceTermView {
         } else {
             JComponent activeToolWindowComponent = activeToolWindow.getComponent();
             if (activeToolWindowComponent != null) {
-                while(source != null && source != activeToolWindowComponent) {
-                    source = source.getParent() != null && source.getParent() instanceof JComponent ? (JComponent)source.getParent() : null;
+                while (source != null && source != activeToolWindowComponent) {
+                    source = source.getParent() != null && source.getParent() instanceof JComponent ? (JComponent) source.getParent() : null;
                 }
             }
 
@@ -268,15 +290,6 @@ public class IceTermView {
             }
             conEmuControl.setParentHWND(((WComponentPeer) tempBackup.getPeer()).getHWnd());
         }
-    }
-
-    private GuiMacroExecutor_N initGuiMacroExecutor() {
-        this.executor_n = new GuiMacroExecutor_N();
-        long conEmuCDdll = executor_n.loadConEmuDll(conEmuCD);
-        System.out.println("ConEmuDll loaded on address: " + conEmuCDdll);
-        long guiMacroFn = executor_n.initGuiMacroFn();
-        System.out.println("guiMacroFn loaded on address: " + guiMacroFn);
-        return executor_n;
     }
 
     private WindowInfoImpl getWindowInfo(String id) {
