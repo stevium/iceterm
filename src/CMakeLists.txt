@@ -51,16 +51,6 @@ add_library(ConEmuHook SHARED
 #        conemuhook/conemupipe/pipe_server_driver.cpp
         )
 
-#[[add_executable(client
-        conemuhook/conemupipe/pipe_client.cpp
-        conemuhook/conemupipe/pipe_client.h
-        conemuhook/conemupipe/pipe_client_driver.cpp)
-
-add_executable(server
-        conemuhook/conemupipe/pipe_server.cpp
-        conemuhook/conemupipe/pipe_server_driver.cpp
-        conemuhook/conemupipe/pipe_server.h)]]
-
 find_package(JNI REQUIRED)
 include_directories(${JNI_INCLUDE_DIRS})
 
