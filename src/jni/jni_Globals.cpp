@@ -5,12 +5,12 @@
 #include "jni_Globals.h"
 #include "jni_Logger.h"
 
-GlobalScreen *org_jnativehook_GlobalScreen = NULL;
-NativeHookThread *org_jnativehook_GlobalScreen$NativeHookThread = NULL;
-NativeHookException *org_jnativehook_NativeHookException = NULL;
-NativeMonitorInfo *org_jnativehook_NativeMonitorInfo = NULL;
-NativeInputEvent *org_jnativehook_NativeInputEvent = NULL;
-NativeKeyEvent *org_jnativehook_keyboard_NativeKeyEvent = NULL;
+GlobalScreen *org_iceterm_cehook_GlobalScreen = NULL;
+NativeHookThread *org_iceterm_cehook_GlobalScreen$NativeHookThread = NULL;
+NativeHookException *org_iceterm_cehook_NativeHookException = NULL;
+NativeMonitorInfo *org_iceterm_cehook_NativeMonitorInfo = NULL;
+NativeInputEvent *org_iceterm_cehook_NativeInputEvent = NULL;
+NativeKeyEvent *org_iceterm_cehook_keyboard_NativeKeyEvent = NULL;
 Object *java_lang_Object = NULL;
 Integer *java_lang_Integer = NULL;
 System *java_lang_System = NULL;
@@ -20,17 +20,17 @@ static int create_GlobalScreen(JNIEnv *env) {
 	int status = JNI_ERR;
 
 	// Class and Constructor for the GlobalScreen Object.
-	jclass GlobalScreen_class = (*env).FindClass("org/jnativehook/GlobalScreen");
+	jclass GlobalScreen_class = (*env).FindClass("org/iceterm/cehook/GlobalScreen");
 	if (GlobalScreen_class != NULL) {
 		// Get the field ID for hookThread.
-		jfieldID hookThread = (*env).GetStaticFieldID(GlobalScreen_class, "hookThread", "Lorg/jnativehook/GlobalScreen$NativeHookThread;");
+		jfieldID hookThread = (*env).GetStaticFieldID(GlobalScreen_class, "hookThread", "Lorg/iceterm/cehook/GlobalScreen$NativeHookThread;");
 
 		if ((*env).ExceptionCheck() == JNI_FALSE) {
-			org_jnativehook_GlobalScreen = static_cast<GlobalScreen *>(malloc(sizeof(GlobalScreen)));
-			if (org_jnativehook_GlobalScreen != NULL) {
+			org_iceterm_cehook_GlobalScreen = static_cast<GlobalScreen *>(malloc(sizeof(GlobalScreen)));
+			if (org_iceterm_cehook_GlobalScreen != NULL) {
 				// Populate our structure for later use.
-				org_jnativehook_GlobalScreen->cls = (jclass) (*env).NewGlobalRef(GlobalScreen_class);
-				org_jnativehook_GlobalScreen->hookThread = hookThread;
+				org_iceterm_cehook_GlobalScreen->cls = (jclass) (*env).NewGlobalRef(GlobalScreen_class);
+				org_iceterm_cehook_GlobalScreen->hookThread = hookThread;
 
 				status = JNI_OK;
 			}
@@ -45,15 +45,15 @@ static int create_GlobalScreen(JNIEnv *env) {
 }
 
 static void destroy_GlobalScreen(JNIEnv *env) {
-	if (org_jnativehook_GlobalScreen != NULL) {
+	if (org_iceterm_cehook_GlobalScreen != NULL) {
 		// The class *should* never be null if the struct was allocated, but we will check anyway.
-		if (org_jnativehook_GlobalScreen->cls != NULL) {
-			(*env).DeleteGlobalRef(org_jnativehook_GlobalScreen->cls);
+		if (org_iceterm_cehook_GlobalScreen->cls != NULL) {
+			(*env).DeleteGlobalRef(org_iceterm_cehook_GlobalScreen->cls);
 		}
 
 		// Free struct memory.
-		free(org_jnativehook_GlobalScreen);
-		org_jnativehook_GlobalScreen = NULL;
+		free(org_iceterm_cehook_GlobalScreen);
+		org_iceterm_cehook_GlobalScreen = NULL;
 	}
 }
 
@@ -62,18 +62,18 @@ static int create_NativeHookThread(JNIEnv *env) {
 	int status = JNI_ERR;
 
 	// Class and Constructor for the GlobalScreen Object.
-	jclass NativeHookThread_class = (*env).FindClass("org/jnativehook/GlobalScreen$NativeHookThread");
+	jclass NativeHookThread_class = (*env).FindClass("org/iceterm/cehook/GlobalScreen$NativeHookThread");
 	if (NativeHookThread_class != NULL) {
 		// Get the method ID for GlobalScreen.dispatchEvent().
-		jmethodID dispatchEvent = (*env).GetStaticMethodID(NativeHookThread_class, "dispatchEvent", "(Lorg/jnativehook/NativeInputEvent;)V");
+		jmethodID dispatchEvent = (*env).GetStaticMethodID(NativeHookThread_class, "dispatchEvent", "(Lorg/iceterm/cehook/NativeInputEvent;)V");
 
 		if ((*env).ExceptionCheck() == JNI_FALSE) {
-			org_jnativehook_GlobalScreen$NativeHookThread = static_cast<NativeHookThread *>(malloc(
+			org_iceterm_cehook_GlobalScreen$NativeHookThread = static_cast<NativeHookThread *>(malloc(
                     sizeof(NativeHookThread)));
-			if (org_jnativehook_GlobalScreen$NativeHookThread != NULL) {
+			if (org_iceterm_cehook_GlobalScreen$NativeHookThread != NULL) {
 				// Populate our structure for later use.
-				org_jnativehook_GlobalScreen$NativeHookThread->cls = (jclass) (*env).NewGlobalRef(NativeHookThread_class);
-				org_jnativehook_GlobalScreen$NativeHookThread->dispatchEvent = dispatchEvent;
+				org_iceterm_cehook_GlobalScreen$NativeHookThread->cls = (jclass) (*env).NewGlobalRef(NativeHookThread_class);
+				org_iceterm_cehook_GlobalScreen$NativeHookThread->dispatchEvent = dispatchEvent;
 
 				status = JNI_OK;
 			}
@@ -88,15 +88,15 @@ static int create_NativeHookThread(JNIEnv *env) {
 }
 
 static void destroy_NativeHookThread(JNIEnv *env) {
-	if (org_jnativehook_GlobalScreen != NULL) {
+	if (org_iceterm_cehook_GlobalScreen != NULL) {
 		// The class *should* never be null if the struct was allocated, but we will check anyway.
-		if (org_jnativehook_GlobalScreen$NativeHookThread->cls != NULL) {
-			(*env).DeleteGlobalRef(org_jnativehook_GlobalScreen$NativeHookThread->cls);
+		if (org_iceterm_cehook_GlobalScreen$NativeHookThread->cls != NULL) {
+			(*env).DeleteGlobalRef(org_iceterm_cehook_GlobalScreen$NativeHookThread->cls);
 		}
 
 		// Free struct memory.
-		free(org_jnativehook_GlobalScreen$NativeHookThread);
-		org_jnativehook_GlobalScreen$NativeHookThread = NULL;
+		free(org_iceterm_cehook_GlobalScreen$NativeHookThread);
+		org_iceterm_cehook_GlobalScreen$NativeHookThread = NULL;
 	}
 }
 
@@ -105,17 +105,17 @@ static int create_NativeHookException(JNIEnv *env) {
 	int status = JNI_ERR;
 
 	// Class and Constructor for the NativeHookException Object.
-	jclass NativeHookException_class = (*env).FindClass("org/jnativehook/NativeHookException");
+	jclass NativeHookException_class = (*env).FindClass("org/iceterm/cehook/NativeHookException");
 	if (NativeHookException_class != NULL) {
 		// Get the method ID for NativeInputEvent constructor.
 		jmethodID init = (*env).GetMethodID(NativeHookException_class, "<init>", "(ILjava/lang/String;)V");
 
 		if ((*env).ExceptionCheck() == JNI_FALSE) {
-			org_jnativehook_NativeHookException = static_cast<NativeHookException *>(malloc(sizeof(NativeInputEvent)));
-			if (org_jnativehook_NativeHookException != NULL) {
+			org_iceterm_cehook_NativeHookException = static_cast<NativeHookException *>(malloc(sizeof(NativeInputEvent)));
+			if (org_iceterm_cehook_NativeHookException != NULL) {
 				// Populate our structure for later use.
-				org_jnativehook_NativeHookException->cls = (jclass) (*env).NewGlobalRef(NativeHookException_class);
-				org_jnativehook_NativeHookException->init = init;
+				org_iceterm_cehook_NativeHookException->cls = (jclass) (*env).NewGlobalRef(NativeHookException_class);
+				org_iceterm_cehook_NativeHookException->init = init;
 
 				status = JNI_OK;
 			}
@@ -130,15 +130,15 @@ static int create_NativeHookException(JNIEnv *env) {
 }
 
 static void destroy_NativeHookException(JNIEnv *env) {
-	if (org_jnativehook_NativeHookException != NULL) {
+	if (org_iceterm_cehook_NativeHookException != NULL) {
 		// The class *should* never be null if the struct was allocated, but we will check anyway.
-		if (org_jnativehook_NativeHookException->cls != NULL) {
-			(*env).DeleteGlobalRef(org_jnativehook_NativeHookException->cls);
+		if (org_iceterm_cehook_NativeHookException->cls != NULL) {
+			(*env).DeleteGlobalRef(org_iceterm_cehook_NativeHookException->cls);
 		}
 
 		// Free struct memory.
-		free(org_jnativehook_NativeHookException);
-		org_jnativehook_NativeHookException = NULL;
+		free(org_iceterm_cehook_NativeHookException);
+		org_iceterm_cehook_NativeHookException = NULL;
 	}
 }
 
@@ -146,7 +146,7 @@ static int create_NativeInputEvent(JNIEnv *env) {
     int status = JNI_ERR;
 
     // Class and Constructor for the NativeInputEvent Object.
-    jclass NativeInputEvent_class = (*env).FindClass("org/jnativehook/NativeInputEvent");
+    jclass NativeInputEvent_class = (*env).FindClass("org/iceterm/cehook/NativeInputEvent");
     if (NativeInputEvent_class != NULL) {
         // Get the field ID for NativeInputEvent.when.
         jfieldID when = (*env).GetFieldID(NativeInputEvent_class, "when", "J");
@@ -164,15 +164,15 @@ static int create_NativeInputEvent(JNIEnv *env) {
         jmethodID getModifiers = (*env).GetMethodID(NativeInputEvent_class, "getModifiers", "()I");
 
         if ((*env).ExceptionCheck() == JNI_FALSE) {
-            org_jnativehook_NativeInputEvent = static_cast<NativeInputEvent *>(malloc(sizeof(NativeInputEvent)));
-            if (org_jnativehook_NativeInputEvent != NULL) {
+            org_iceterm_cehook_NativeInputEvent = static_cast<NativeInputEvent *>(malloc(sizeof(NativeInputEvent)));
+            if (org_iceterm_cehook_NativeInputEvent != NULL) {
                 // Populate our structure for later use.
-                org_jnativehook_NativeInputEvent->cls = (jclass) (*env).NewGlobalRef(NativeInputEvent_class);
-                org_jnativehook_NativeInputEvent->when = when;
-                org_jnativehook_NativeInputEvent->reserved = reserved;
-                org_jnativehook_NativeInputEvent->init = init;
-                org_jnativehook_NativeInputEvent->getID = getID;
-                org_jnativehook_NativeInputEvent->getModifiers = getModifiers;
+                org_iceterm_cehook_NativeInputEvent->cls = (jclass) (*env).NewGlobalRef(NativeInputEvent_class);
+                org_iceterm_cehook_NativeInputEvent->when = when;
+                org_iceterm_cehook_NativeInputEvent->reserved = reserved;
+                org_iceterm_cehook_NativeInputEvent->init = init;
+                org_iceterm_cehook_NativeInputEvent->getID = getID;
+                org_iceterm_cehook_NativeInputEvent->getModifiers = getModifiers;
 
                 status = JNI_OK;
             }
@@ -187,15 +187,15 @@ static int create_NativeInputEvent(JNIEnv *env) {
 }
 
 static void destroy_NativeInputEvent(JNIEnv *env) {
-	if (org_jnativehook_NativeInputEvent != NULL) {
+	if (org_iceterm_cehook_NativeInputEvent != NULL) {
 		// The class *should* never be null if the struct was allocated, but we will check anyway.
-		if (org_jnativehook_NativeInputEvent->cls != NULL) {
-			(*env).DeleteGlobalRef(org_jnativehook_NativeInputEvent->cls);
+		if (org_iceterm_cehook_NativeInputEvent->cls != NULL) {
+			(*env).DeleteGlobalRef(org_iceterm_cehook_NativeInputEvent->cls);
 		}
 
 		// Free struct memory.
-		free(org_jnativehook_NativeInputEvent);
-		org_jnativehook_NativeInputEvent = NULL;
+		free(org_iceterm_cehook_NativeInputEvent);
+		org_iceterm_cehook_NativeInputEvent = NULL;
 	}
 }
 
@@ -204,7 +204,7 @@ static int create_NativeKeyEvent(JNIEnv *env) {
 	int status = JNI_ERR;
 
 	// Class and Constructor for the NativeKeyEvent Object.
-	jclass NativeKeyEvent_class = (*env).FindClass("org/jnativehook/keyboard/NativeKeyEvent");
+	jclass NativeKeyEvent_class = (*env).FindClass("org/iceterm/cehook/keyboard/NativeKeyEvent");
 	if (NativeKeyEvent_class != NULL) {
 		// Get the method ID for NativeKeyEvent constructor.
 		jmethodID init = (*env).GetMethodID(NativeKeyEvent_class, "<init>", "(IIIICI)V");
@@ -219,15 +219,15 @@ static int create_NativeKeyEvent(JNIEnv *env) {
 		jmethodID getKeyChar = (*env).GetMethodID(NativeKeyEvent_class, "getKeyChar", "()C");
 
 		if ((*env).ExceptionCheck() == JNI_FALSE) {
-			org_jnativehook_keyboard_NativeKeyEvent = static_cast<NativeKeyEvent *>(malloc(sizeof(NativeKeyEvent)));
-			if (org_jnativehook_keyboard_NativeKeyEvent != NULL) {
+			org_iceterm_cehook_keyboard_NativeKeyEvent = static_cast<NativeKeyEvent *>(malloc(sizeof(NativeKeyEvent)));
+			if (org_iceterm_cehook_keyboard_NativeKeyEvent != NULL) {
 				// Populate our structure for later use.
-				org_jnativehook_keyboard_NativeKeyEvent->cls = (jclass) (*env).NewGlobalRef(NativeKeyEvent_class);
-				org_jnativehook_keyboard_NativeKeyEvent->parent = org_jnativehook_NativeInputEvent;
-				org_jnativehook_keyboard_NativeKeyEvent->init = init;
-				org_jnativehook_keyboard_NativeKeyEvent->getKeyCode = getKeyCode;
-				org_jnativehook_keyboard_NativeKeyEvent->getKeyLocation = getKeyLocation;
-				org_jnativehook_keyboard_NativeKeyEvent->getKeyChar = getKeyChar;
+				org_iceterm_cehook_keyboard_NativeKeyEvent->cls = (jclass) (*env).NewGlobalRef(NativeKeyEvent_class);
+				org_iceterm_cehook_keyboard_NativeKeyEvent->parent = org_iceterm_cehook_NativeInputEvent;
+				org_iceterm_cehook_keyboard_NativeKeyEvent->init = init;
+				org_iceterm_cehook_keyboard_NativeKeyEvent->getKeyCode = getKeyCode;
+				org_iceterm_cehook_keyboard_NativeKeyEvent->getKeyLocation = getKeyLocation;
+				org_iceterm_cehook_keyboard_NativeKeyEvent->getKeyChar = getKeyChar;
 
 				status = JNI_OK;
 			}
@@ -242,15 +242,15 @@ static int create_NativeKeyEvent(JNIEnv *env) {
 }
 
 static void destroy_NativeKeyEvent(JNIEnv *env) {
-	if (org_jnativehook_keyboard_NativeKeyEvent != NULL) {
+	if (org_iceterm_cehook_keyboard_NativeKeyEvent != NULL) {
 		// The class *should* never be null if the struct was allocated, but we will check anyway.
-		if (org_jnativehook_keyboard_NativeKeyEvent->cls != NULL) {
-			(*env).DeleteGlobalRef(org_jnativehook_keyboard_NativeKeyEvent->cls);
+		if (org_iceterm_cehook_keyboard_NativeKeyEvent->cls != NULL) {
+			(*env).DeleteGlobalRef(org_iceterm_cehook_keyboard_NativeKeyEvent->cls);
 		}
 
 		// Free struct memory.
-		free(org_jnativehook_keyboard_NativeKeyEvent);
-		org_jnativehook_keyboard_NativeKeyEvent = NULL;
+		free(org_iceterm_cehook_keyboard_NativeKeyEvent);
+		org_iceterm_cehook_keyboard_NativeKeyEvent = NULL;
 	}
 }
 
@@ -441,7 +441,6 @@ static inline void destroy_Logger(JNIEnv *env) {
 		java_util_logging_Logger = NULL;
 	}
 }
-
 
 int jni_CreateGlobals(JNIEnv *env) {
 	int status = create_GlobalScreen(env);

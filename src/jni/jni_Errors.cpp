@@ -33,8 +33,8 @@ void jni_ThrowException(JNIEnv *env, const char *classname, const char *message)
 }
 
 void jni_ThrowNativeHookException(JNIEnv *env, short code, const char *message) {
-	jobject Exception_object = (*env).NewObject(org_jnativehook_NativeHookException->cls,
-			org_jnativehook_NativeHookException->init, (jint) code, (*env).NewStringUTF(message));
+	jobject Exception_object = (*env).NewObject(org_iceterm_cehook_NativeHookException->cls,
+			org_iceterm_cehook_NativeHookException->init, (jint) code, (*env).NewStringUTF(message));
 	(*env).Throw((jthrowable) Exception_object);
 	(*env).DeleteLocalRef(Exception_object);
 }

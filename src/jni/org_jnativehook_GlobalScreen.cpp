@@ -4,11 +4,11 @@
 #include "jni_Globals.h"
 #include "jni_Logger.h"
 #include "jni_Errors.h"
-#include "org_jnativehook_NativeInputEvent.h"
-#include "org_jnativehook_keyboard_NativeKeyEvent.h"
-//#include "org_jnativehook_GlobalScreen.h"
+#include "org_iceterm_cehook_NativeInputEvent.h"
+#include "org_iceterm_cehook_keyboard_NativeKeyEvent.h"
+//#include "org_iceterm_cehook_GlobalScreen.h"
 
-JNIEXPORT void JNICALL Java_org_jnativehook_GlobalScreen_00024NativeHookThread_enable(JNIEnv *env, jobject Thread_obj) {
+JNIEXPORT void JNICALL Java_org_iceterm_cehook_GlobalScreen_00024NativeHookThread_enable(JNIEnv *env, jobject Thread_obj) {
 //int status = hook_run();
 //
 //	switch (status) {
@@ -74,7 +74,7 @@ JNIEXPORT void JNICALL Java_org_jnativehook_GlobalScreen_00024NativeHookThread_e
 //	}
 }
 
-JNIEXPORT void JNICALL Java_org_jnativehook_GlobalScreen_00024NativeHookThread_disable(JNIEnv *env, jobject Thread_obj) {
+JNIEXPORT void JNICALL Java_org_iceterm_cehook_GlobalScreen_00024NativeHookThread_disable(JNIEnv *env, jobject Thread_obj) {
 //	int status = hook_stop();
 //
 //	// Only a handful of the total errors are possible on stop.
@@ -105,32 +105,32 @@ JNIEXPORT void JNICALL Java_org_jnativehook_GlobalScreen_00024NativeHookThread_d
 }
 
 /*
- * Class:     org_jnativehook_GlobalScreen
+ * Class:     org_iceterm_cehook_GlobalScreen
  * Method:    postNativeEvent
  * Signature: (Lorg/jnativehook/NativeInputEvent;)V
  */
-JNIEXPORT void JNICALL Java_org_jnativehook_GlobalScreen_postNativeEvent(JNIEnv *env, jclass GlobalScreen_cls, jobject NativeInputEvent_obj) {
+JNIEXPORT void JNICALL Java_org_iceterm_cehook_GlobalScreen_postNativeEvent(JNIEnv *env, jclass GlobalScreen_cls, jobject NativeInputEvent_obj) {
 	// Get the event type.
-	jint javaType = (*env).CallIntMethod(NativeInputEvent_obj, org_jnativehook_NativeInputEvent->getID);
+	jint javaType = (*env).CallIntMethod(NativeInputEvent_obj, org_iceterm_cehook_NativeInputEvent->getID);
 
 	// Allocate memory for the virtual event and set the type.
 	uiohook_event virtualEvent;
 	jni_ConvertToNativeType(javaType, &virtualEvent.type);
 
 	// Convert Java event to virtual event.
-	virtualEvent.mask = (unsigned int) (*env).CallIntMethod(NativeInputEvent_obj, org_jnativehook_NativeInputEvent->getModifiers);
+	virtualEvent.mask = (unsigned int) (*env).CallIntMethod(NativeInputEvent_obj, org_iceterm_cehook_NativeInputEvent->getModifiers);
 
 	switch (javaType) {
-		case org_jnativehook_keyboard_NativeKeyEvent_NATIVE_KEY_TYPED:
-			virtualEvent.data.keyboard.keychar = (*env).CallIntMethod(NativeInputEvent_obj, org_jnativehook_keyboard_NativeKeyEvent->getKeyChar);
+		case org_iceterm_cehook_keyboard_NativeKeyEvent_NATIVE_KEY_TYPED:
+			virtualEvent.data.keyboard.keychar = (*env).CallIntMethod(NativeInputEvent_obj, org_iceterm_cehook_keyboard_NativeKeyEvent->getKeyChar);
 			virtualEvent.data.keyboard.keycode = VC_UNDEFINED;
 			virtualEvent.data.keyboard.rawcode = 0x00;
 			break;
 
-		case org_jnativehook_keyboard_NativeKeyEvent_NATIVE_KEY_PRESSED:
-		case org_jnativehook_keyboard_NativeKeyEvent_NATIVE_KEY_RELEASED:
+		case org_iceterm_cehook_keyboard_NativeKeyEvent_NATIVE_KEY_PRESSED:
+		case org_iceterm_cehook_keyboard_NativeKeyEvent_NATIVE_KEY_RELEASED:
 			virtualEvent.data.keyboard.keychar = CHAR_UNDEFINED;
-			virtualEvent.data.keyboard.keycode = (*env).CallIntMethod(NativeInputEvent_obj, org_jnativehook_keyboard_NativeKeyEvent->getKeyCode);
+			virtualEvent.data.keyboard.keycode = (*env).CallIntMethod(NativeInputEvent_obj, org_iceterm_cehook_keyboard_NativeKeyEvent->getKeyCode);
 			virtualEvent.data.keyboard.rawcode = 0x00;
 			break;
 

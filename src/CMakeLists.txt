@@ -8,19 +8,15 @@ include_directories(jni/include)
 include_directories(conemuhook/include)
 
 add_library(iceterm SHARED
-        jni/org_iceterm_ceintegration_GuiMacroExecutor.cpp
-        jni/org_iceterm_ceintegration_GuiMacroExecutor.h
         conemuhook/conemupipe/pipe_server.cpp
         conemuhook/conemupipe/pipe_server.h
-        conemuhook/conemupipe/pipe_client.cpp
-        conemuhook/conemupipe/pipe_client.h
-        conemuhook/logger.h
-        conemuhook/logger.cpp
+        conemuhook/post_event.cpp
         conemuhook/input_helper.h
         conemuhook/input_helper.cpp
-        conemuhook/input_hook.cpp
-        conemuhook/system_properties.cpp
-        conemuhook/post_event.cpp
+        conemuhook/logger.h
+        conemuhook/logger.cpp
+        jni/org_iceterm_ceintegration_GuiMacroExecutor.cpp
+        jni/org_iceterm_ceintegration_GuiMacroExecutor.h
         jni/org_iceterm_cehook_ConEmuHook.cpp
         jni/org_iceterm_cehook_ConEmuHook.h
         jni/jni_Globals.cpp
@@ -34,7 +30,7 @@ add_library(iceterm SHARED
         jni/jni_EventDispatcher.cpp
         jni/jni_EventDispatcher.h
         jni/jni_Load.cpp
-        jni/org_jnativehook_GlobalScreen.cpp
+#        jni/org_iceterm_cehook_GlobalScreen.cpp
         )
 
 add_library(ConEmuHook SHARED
