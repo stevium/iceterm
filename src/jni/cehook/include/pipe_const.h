@@ -1,6 +1,5 @@
 #include <iostream>
 
-#define AU_DATA_BUF     1024
 #define PIPENAME        "\\\\.\\pipe\\CodeProjectPipe"
 #define LOG std::cout
 

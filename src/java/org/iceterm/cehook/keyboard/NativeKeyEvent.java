@@ -43,10 +43,6 @@ import java.awt.*;
  * events can be used to determine the Unicode representation of the <code>NativeKeyEvent</code>.
  * <p>
  *
- * @author	Alexander Barker (<a href="mailto:alex@1stleg.com">alex@1stleg.com</a>)
- * @version	2.0
- * @since	1.0
- *
  * @see NativeKeyListener
  */
 public class NativeKeyEvent extends NativeInputEvent {

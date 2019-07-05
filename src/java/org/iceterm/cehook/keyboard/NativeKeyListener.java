@@ -16,10 +16,6 @@ import java.util.EventListener;
  * <code>NativeKeyEvent</code> occurs, that object's appropriate method is
  * invoked.
  *
- * @author	Alexander Barker (<a href="mailto:alex@1stleg.com">alex@1stleg.com</a>)
- * @version	2.0
- * @since	1.0
- *
  * @see NativeKeyEvent
  */
 public interface NativeKeyListener extends EventListener {

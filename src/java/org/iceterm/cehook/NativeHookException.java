@@ -2,10 +2,6 @@ package org.iceterm.cehook;
 
 /**
  * Signals that a Native Hook Exception has occurred.
- *
- * @author	Alexander Barker (<a href="mailto:alex@1stleg.com">alex@1stleg.com</a>)
- * @since	1.0
- * @version	2.0
  */
 public class NativeHookException extends Exception {
 	/** The Constant serialVersionUID. */

@@ -1,8 +1,12 @@
 package org.iceterm.cehook;
 
 import com.sun.jna.platform.win32.WinDef;
+import org.iceterm.IceTermOptionsProvider;
+import org.iceterm.cehook.example.NativeHookDemo;
+import org.iceterm.cehook.keyboard.NativeKeyEvent;
 
 import javax.swing.*;
+import java.awt.event.InputEvent;
 
 public class ConEmuHook {
     static {
@@ -14,8 +18,39 @@ public class ConEmuHook {
         JOptionPane.showMessageDialog(null, "Received " + message);
     }
 
+    public int convertModifiers(int modifiers) {
+        int newModifiers = 0;
+        if ((modifiers & InputEvent.SHIFT_DOWN_MASK) != 0) {
+            newModifiers |= NativeKeyEvent.SHIFT_MASK;
+        }
+        if ((modifiers & InputEvent.ALT_DOWN_MASK) != 0) {
+            newModifiers |= NativeKeyEvent.ALT_MASK;
+        }
+        if ((modifiers & InputEvent.ALT_GRAPH_DOWN_MASK) != 0) {
+            newModifiers |= NativeKeyEvent.ALT_MASK;
+        }
+        if ((modifiers & InputEvent.CTRL_DOWN_MASK) != 0) {
+            newModifiers |= NativeKeyEvent.CTRL_MASK;
+        }
+        if ((modifiers & InputEvent.META_DOWN_MASK) != 0) {
+            newModifiers |= NativeKeyEvent.META_MASK;
+        }
+
+        return newModifiers;
+    }
+
     public void run(int conEmuPid, long wHwnd) {
         try {
+            createPipeServer();
+            IceTermOptionsProvider options = IceTermOptionsProvider.getInstance();
+
+            GlobalScreen.postNativeEvent(new NativeKeyEvent(
+                    NativeKeyEvent.NATIVE_KEY_PRESSED,
+                    convertModifiers(options.getPrefixKey().getModifiers()),
+                    options.getPrefixKey().getKeyCode(),
+                    options.getPrefixKey().getKeyCode(),
+                    options.getPrefixKey().getKeyChar()));
+
             Thread serverThread = new Thread(() -> {
                 try {
                     runPipeServer();
@@ -25,11 +60,14 @@ public class ConEmuHook {
             });
             serverThread.start();
             inject(conEmuPid, wHwnd);
+
+//            NativeHookDemo.start();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    private static native void createPipeServer();
     private static native void runPipeServer();
     private static native void inject(int nConEmuPid, long wHwnd);
 }

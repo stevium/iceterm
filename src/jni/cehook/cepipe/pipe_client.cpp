@@ -1,6 +1,8 @@
+#include <uiohook.h>
 #include "process.h"
 #include "pipe_client.h"
 
+uiohook_event *prefix_key = NULL;
 
 pipe_client::pipe_client(void)
 {
@@ -10,7 +12,7 @@ pipe_client::pipe_client(std::string& sName) : m_sPipeName(sName),
                                                 m_hThread(NULL), 
                                                 m_nEvent(AU_INIT)
 {
-    m_buffer = (char*)calloc(AU_DATA_BUF, sizeof(char));
+    m_buffer = (char*)calloc(sizeof(uiohook_event), sizeof(char));
     Init();
 }
 
@@ -40,18 +42,21 @@ HANDLE pipe_client::GetPipeHandle()
     return m_hPipe;
 }
 
-void pipe_client::SetData(std::string sData)
+void pipe_client::SetData(uiohook_event sData)
 {
-    memset(&m_buffer[0], 0, AU_DATA_BUF);
+    memset(&m_buffer[0], 0, sizeof(uiohook_event));
 //    memcpy(&m_buffer[0], sData.c_str(), __min(AU_DATA_BUF, sData.size()));
-    strncpy(&m_buffer[0], sData.c_str(), __min(AU_DATA_BUF, sData.size()));
+    memcpy(&m_buffer[0], reinterpret_cast<char*>(&sData), sizeof(uiohook_event));
 }
 
 // Get data from buffer
-void pipe_client::GetData(std::string& sData)
+void pipe_client::GetData(uiohook_event *sData)
 {
-    sData.clear(); // Clear old data, if any
-    sData.append(m_buffer);
+    sData->data = (reinterpret_cast<uiohook_event*>(m_buffer))->data;
+    sData->time = (reinterpret_cast<uiohook_event*>(m_buffer))->time;
+    sData->type = (reinterpret_cast<uiohook_event*>(m_buffer))->type;
+    sData->mask = (reinterpret_cast<uiohook_event*>(m_buffer))->mask;
+    sData->reserved = (reinterpret_cast<uiohook_event*>(m_buffer))->reserved;
 }
 
 void pipe_client::Init()
@@ -102,7 +107,7 @@ UINT32 __stdcall pipe_client::PipeThreadProc(void* pParam)
         {
             // Close pipe comm
 //            MessageBox(0, "CLosing pipe", "pipe_client", MB_OK);
-            pPipe->Close();
+//            pPipe->Close();
             break;
         }
 
@@ -125,12 +130,12 @@ UINT32 __stdcall pipe_client::PipeThreadProc(void* pParam)
             }
 
             case AU_IOWRITE:
-            {
-                if(pPipe->Write())
-                    pPipe->OnEvent(AU_WRITE);
-                else
-                    pPipe->OnEvent(AU_ERROR);
-            }
+                {
+                    if(pPipe->Write())
+                        pPipe->OnEvent(AU_WRITE);
+                    else
+                        pPipe->OnEvent(AU_ERROR);
+                }
                 break;
 
             case AU_CLOSE:
@@ -211,12 +216,20 @@ void pipe_client::OnEvent(int nEventID)
 
     case AU_READ:
         {
-        std::string sData;
-        GetData(sData);
-        LOG << "Message from server: " << sData << std::endl;
-        sData.clear();
+        uiohook_event sData;
+        GetData(&sData);
+        LOG << "Message from server: " << sData.data.keyboard.keychar << std::endl;
         //sData.append("close");
         //SetData(sData);
+
+        if(sData.reserved == 0x01) {
+            prefix_key = new uiohook_event;
+            prefix_key->data = sData.data;
+            prefix_key->type = sData.type;
+            prefix_key->time = sData.time;
+            prefix_key->mask = sData.mask;
+            prefix_key->reserved = sData.reserved;
+        }
         SetEvent(AU_IOPENDING);
         break;
         }
@@ -254,10 +267,9 @@ bool pipe_client::Read()
         bFinishedRead = ::ReadFile(
             m_hPipe,            // handle to pipe 
             &m_buffer[read],    // buffer to receive data 
-            AU_DATA_BUF,        // size of buffer 
+            sizeof(uiohook_event),        // size of buffer
             &drBytes,           // number of bytes read 
             NULL);              // not overlapped I/O 
-
 
         if(!bFinishedRead && ERROR_MORE_DATA != GetLastError())
         {
@@ -275,6 +287,7 @@ bool pipe_client::Read()
         return false;
     }
 
+//    MessageBox(0, "Read data from server", "pipe_client", MB_OK);
     return true;
 }
 
@@ -284,14 +297,13 @@ bool pipe_client::Write()
     BOOL bResult = ::WriteFile(
         m_hPipe,                  // handle to pipe
         m_buffer,                 // buffer to write from
-        ::strlen(m_buffer)*sizeof(char) + 1,     // number of bytes to write, include the NULL
+        sizeof(uiohook_event),     // number of bytes to write, include the NULL
         &dwBytes,                 // number of bytes written
         NULL);                  // not overlapped I/O
 
-    if(FALSE == bResult || strlen(m_buffer)*sizeof(char) + 1 != dwBytes)
+    if(FALSE == bResult || sizeof(uiohook_event) != dwBytes)
     {
 //        SetEventData("WriteFile failed");
-//        MessageBox(0, "WriteFile failed", "pipe_client", MB_OK);
         std::string result = std::to_string(bResult);
 //        MessageBox(0, result.c_str(), "pipe_client", MB_OK);
         return false;

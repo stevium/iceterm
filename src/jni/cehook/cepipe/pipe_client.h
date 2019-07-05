@@ -1,5 +1,5 @@
 /**
- * Description: CPipeServer class implements pipe server related functionality.
+ * Description: CPipeClient class implements pipe client related functionality.
  *              Wraps the underlying ReadFile/WriteFile functions to read/write
  *              data to the pipe. Provides an event-based mechanism to handle
  *              pipe communication. An independent thread processes all the pipe
@@ -10,10 +10,12 @@
 
 #include "windows.h"
 #include <string>
+#include <uiohook.h>
 #include "pipe_const.h"
-#include <jni.h>
 
-class pipe_server
+extern uiohook_event *prefix_key;
+
+class pipe_client
 {
 public:
 
@@ -21,12 +23,12 @@ public:
      * Constructor
      * @paramIn sName: Pipe name
      */
-    pipe_server(std::string& sName, JNIEnv *env, jclass cls);
+    pipe_client(std::string& sName);
 
     /**
      * Destructor
      */
-    virtual ~pipe_server(void);
+    virtual ~pipe_client(void);
 
     /**
      * Get event ID
@@ -56,13 +58,18 @@ public:
      * Write data to buffer
      * @paramIn sData: string data to be copied to buffer
      */
-    void SetData(std::string& sData);
+    void SetData(uiohook_event sData);
 
     /**
      * Read data from buffer
      * @paramOut: Data will be copied from buffer
      */
-    void GetData(std::string& sData);
+    void GetData(uiohook_event * sData);
+
+    /**
+     * Connect pipe client to pipe server
+     */
+    void ConnectToServer();
 
     /**
      * Invoked whenever there is a pipe event
@@ -74,12 +81,7 @@ public:
      * Thread callback function which processes the pipe I/O events
      * @paramIn param: CPipeClient object
      */
-    static UINT32 __stdcall PipeThreadProc(void*); 
-
-    /**
-     * Wait for a pipe client to get connected
-     */
-    void WaitForClient();
+    static UINT32 __stdcall PipeThreadProc(void* param); 
 
     /**
      * Close the pipe client
@@ -98,31 +100,27 @@ public:
      */
     bool Write();
 
-    /**
-     * Starts the pipe thread
-     */
-    void Run();
-
 private:
 
     /**
      * Default constructor
      */
-    pipe_server(void);
+    pipe_client(void);
 
     /**
      * Initializes pipe client. A thread is created and starts running
      */
     void Init();
 
+    /**
+     * Starts the pipe thread
+     */
+    void Run();
 
     const std::string m_sPipeName; // Pipe name
     HANDLE m_hPipe;                 // Pipe handle
     HANDLE m_hThread;               // Pipe thread
-    JNIEnv * jniEnv;
-    jclass jClass;
     int    m_nEvent;                // Pipe event
     char* m_buffer;              // Buffer to hold data
 
 };
-

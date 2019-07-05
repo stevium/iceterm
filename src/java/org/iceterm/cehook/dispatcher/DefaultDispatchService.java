@@ -11,10 +11,6 @@ import java.util.concurrent.TimeUnit;
  * the same as calling {@link java.util.concurrent.Executors#newSingleThreadExecutor}.
  * <p>
  *
- * @author	Alexander Barker (<a href="mailto:alex@1stleg.com">alex@1stleg.com</a>)
- * @version	2.0
- * @since	2.0
- *
  * @see  java.util.concurrent.ExecutorService
  * @see  org.jnativehook.GlobalScreen#setEventDispatcher
  */

@@ -1,21 +1,24 @@
+#include <uiohook.h>
+#include <cehook/include/uiohook.h>
 #include "process.h"
 #include "windows.h"
 #include "tchar.h"
 #include "pipe_server.h"
-
+#include "org_iceterm_cehook_keyboard_NativeKeyEvent.h"
+#include "../jni_Globals.h"
 
 pipe_server::pipe_server(void)
 {
 }
 
-pipe_server::pipe_server(std::string& sName, JNIEnv * env, jclass cls) 
+pipe_server::pipe_server(std::string& sName, JNIEnv * env, jclass cls)
 	: m_sPipeName(sName), 
-	m_hThread(NULL), 
+	m_hThread(NULL),
 	m_nEvent(AU_INIT)
 {
 	jniEnv = env;
 	jClass = cls;
-    m_buffer = (char*)calloc(AU_DATA_BUF, sizeof(char));
+    m_buffer = (char*)calloc(sizeof(uiohook_event), sizeof(char));
     Init();
 }
 
@@ -33,6 +36,7 @@ int pipe_server::GetEvent() const
 void pipe_server::SetEvent(int nEventID)
 {
     m_nEvent = nEventID;
+//    MessageBox(0, "Setting Event", "pipe_server", MB_OK);
 }
 
 HANDLE pipe_server::GetThreadHandle()
@@ -45,17 +49,20 @@ HANDLE pipe_server::GetPipeHandle()
     return m_hPipe;
 }
 
-void pipe_server::SetData(std::string& sData)
+void pipe_server::SetData(uiohook_event sData)
 {
-    memset(&m_buffer[0], 0, AU_DATA_BUF);
-    strncpy(&m_buffer[0], sData.c_str(), __min(AU_DATA_BUF, sData.size()));
+    memset(&m_buffer[0], 0, sizeof(uiohook_event));
+    memcpy(&m_buffer[0], reinterpret_cast<char*>(&sData), sizeof(uiohook_event));
 }
 
 // Get data from buffer
-void pipe_server::GetData(std::string& sData)
+void pipe_server::GetData(uiohook_event &sData)
 {
-    sData.clear(); // Clear old data, if any
-    sData.append(m_buffer);
+    sData.data = (reinterpret_cast<uiohook_event*>(m_buffer))->data;
+    sData.time = (reinterpret_cast<uiohook_event*>(m_buffer))->time;
+    sData.type = (reinterpret_cast<uiohook_event*>(m_buffer))->type;
+    sData.mask = (reinterpret_cast<uiohook_event*>(m_buffer))->mask;
+    sData.reserved = (reinterpret_cast<uiohook_event*>(m_buffer))->reserved;
 }
 
 void pipe_server::Init()
@@ -86,30 +93,28 @@ void pipe_server::Init()
     {
         OnEvent(AU_SERV_RUN);
     }
-
-    Run();
 }
 
 void pipe_server::Run()
 {
-    //UINT uiThreadId = 0;
-    //m_hThread = (HANDLE)_beginthreadex(NULL,
-    //    NULL,
-    //    PipeThreadProc,
-    //    this,
-    //    CREATE_SUSPENDED,
-    //    &uiThreadId);
+//    UINT uiThreadId = 0;
+//    m_hThread = (HANDLE)_beginthreadex(NULL,
+//        NULL,
+//        PipeThreadProc,
+//        this,
+//        CREATE_SUSPENDED,
+//        &uiThreadId);
 	PipeThreadProc(this);
 
-    //if(NULL == m_hThread)
-    //{
-    //    OnEvent(AU_ERROR);
-    //}
-    //else
-    //{
-    //    SetEvent(AU_INIT);
-    //    ::ResumeThread(m_hThread);
-    //}
+//    if(NULL == m_hThread)
+//    {
+//        OnEvent(AU_ERROR);
+//    }
+//    else
+//    {
+//        SetEvent(AU_INIT);
+//        ::ResumeThread(m_hThread);
+//    }
 }
 
 UINT32 __stdcall pipe_server::PipeThreadProc(void* pParam)
@@ -126,7 +131,7 @@ UINT32 __stdcall pipe_server::PipeThreadProc(void* pParam)
         {
             // Close pipe comm
             MessageBox(0, "Closing server", "pipe_server", MB_OK);
-            pPipe->Close();
+//            pPipe->Close();
             break;
         }
 
@@ -150,6 +155,7 @@ UINT32 __stdcall pipe_server::PipeThreadProc(void* pParam)
 
         case AU_IOWRITE:
             {
+//                MessageBox(0, "IOWRITE", "pipe_server", MB_OK);
                 if(pPipe->Write())
                     pPipe->OnEvent(AU_WRITE);
                 else
@@ -207,22 +213,71 @@ void pipe_server::OnEvent(int nEventID)
 
     case AU_CLNT_CONN:
         {
-        std::string sData("Welcome pipe client!");
-        SetData(sData);
+//        std::string sData("Welcome pipe client!");
+//        uiohook_event event;
+//        event.data.keyboard.keychar = 109;
+
+        LOG << "Client connected. Sending reserved: " << prefix_event.reserved << std::endl;
+        LOG << "Client connected. Sending mask: " << prefix_event.mask << std::endl;
+        SetData(prefix_event);
         SetEvent(AU_IOWRITE);
         break;
         }
 
     case AU_READ:
 	{
-		std::string sData;
-		GetData(sData);
-		LOG << "Message from client: " << sData << std::endl;
+		uiohook_event event;
+		GetData(event);
 
-		if (strcmp(sData.c_str(), "close") == 0)
-			SetEvent(AU_CLOSE);
-		else {
-            SetEvent(AU_IOREAD);
+        JNIEnv *env;
+        if ((*jvm).GetEnv((void **)(&env), jvm_attach_args.version) == JNI_OK) {
+            jobject NativeInputEvent_obj = NULL;
+            jint location = org_iceterm_cehook_keyboard_NativeKeyEvent_LOCATION_UNKNOWN;
+
+            NativeInputEvent_obj = (*env).NewObject(
+                    org_iceterm_cehook_keyboard_NativeKeyEvent->cls,
+                    org_iceterm_cehook_keyboard_NativeKeyEvent->init,
+
+                    (jint) event.mask,
+                    (jint) event.data.keyboard.rawcode,
+                    (jint) org_iceterm_cehook_keyboard_NativeKeyEvent_VC_UNDEFINED,
+                    (jchar) event.data.keyboard.keychar,
+                    location);
+
+            // Set the private when field to the native event time.
+            (*env).SetShortField(
+                    NativeInputEvent_obj,
+                    org_iceterm_cehook_NativeInputEvent->when,
+                    (jlong)	event.time);
+
+            // Dispatch the event.
+            (*env).CallStaticVoidMethod(
+                    org_iceterm_cehook_GlobalScreen$NativeHookThread->cls,
+                    org_iceterm_cehook_GlobalScreen$NativeHookThread->dispatchEvent,
+                    NativeInputEvent_obj);
+
+            if (NativeInputEvent_obj != NULL) {
+                LOG << "Message from client: " << event.data.keyboard.keychar << std::endl;
+                LOG << "Checking client data. Reserved " << event.reserved << std::endl;
+                LOG << "Checking client data. Keycode " << event.data.keyboard.keycode << std::endl;
+                LOG << "Checking client data. Rawcode " << event.data.keyboard.rawcode << std::endl;
+                LOG << "Checking client data. KeyChar " << event.data.keyboard.keychar  << std::endl;
+                LOG << "Checking client data. Mask " << event.mask << std::endl;
+                LOG << "Checking Prefix data. Reserved " << prefix_event.reserved << std::endl;
+                LOG << "Checking Prefix data. Keycode " << prefix_event.data.keyboard.keycode << std::endl;
+                LOG << "Checking Prefix data. Rawcode " << prefix_event.data.keyboard.rawcode << std::endl;
+                LOG << "Checking Prefix data. KeyChar " << prefix_event.data.keyboard.keychar  << std::endl;
+                LOG << "Checking Prefix data. Mask " << prefix_event.mask << std::endl;
+                SetEvent(AU_IOREAD);
+            }
+
+        }
+
+
+//		if (strcmp(sData.c_str(), "close") == 0)
+//			SetEvent(AU_CLOSE);
+//		else {
+//            SetEvent(AU_IOREAD);
     //		try {
     //			//LOG << "Getting static method ID" << " for class " << jClass << " env " << jniEnv << std::endl;
     //			//auto method = jniEnv->GetMethodID(jClass, "keyEventReceived", "(I)I");
@@ -239,7 +294,7 @@ void pipe_server::OnEvent(int nEventID)
     //			std::cout << e.what(); // information from length_error printed
     //
     //		}
-		}
+//		}
 		break;
 	}
     case AU_WRITE:
@@ -290,7 +345,7 @@ bool pipe_server::Read()
         bFinishedRead = ::ReadFile( 
             m_hPipe,            // handle to pipe 
             &m_buffer[read],    // buffer to receive data 
-            AU_DATA_BUF,        // size of buffer 
+            sizeof(uiohook_event),        // size of buffer
             &drBytes,           // number of bytes read 
             NULL);              // not overlapped I/O 
 
@@ -306,7 +361,7 @@ bool pipe_server::Read()
     if(FALSE == bFinishedRead || 0 == drBytes)
     {
         //SetEventData("ReadFile failed");
-        MessageBox(0, "ReadFile failed", "pipe_server", MB_OK);
+//        MessageBox(0, "ReadFile failed", "pipe_server", MB_OK);
         return false;
     }
 
@@ -319,11 +374,13 @@ bool pipe_server::Write()
     BOOL bResult = ::WriteFile(
         m_hPipe,                  // handle to pipe
         m_buffer,                 // buffer to write from
-        ::strlen(m_buffer)*sizeof(char) + 1,     // number of bytes to write, include the NULL
+        sizeof(uiohook_event),     // number of bytes to write, include the NULL
         &dwBytes,                 // number of bytes written
         NULL);                  // not overlapped I/O
 
-    if(FALSE == bResult || strlen(m_buffer)*sizeof(char) + 1 != dwBytes)
+//    MessageBox(0, "Writing to Client", "pipe_server", MB_OK);
+
+    if(FALSE == bResult || sizeof(uiohook_event) != dwBytes)
     {
         //SetEventData("WriteFile failed");
         MessageBox(0, "WriteFile failed", "pipe_server", MB_OK);
@@ -331,4 +388,13 @@ bool pipe_server::Write()
     }
 
     return true;
+}
+
+void pipe_server::SetPrefixData(uiohook_event prefix) {
+    LOG << "Setting Prefix data. Reserved " << prefix.reserved << std::endl;
+    LOG << "Setting Prefix data. Keycode " << prefix.data.keyboard.keycode << std::endl;
+    LOG << "Setting Prefix data. Rawcode " << prefix.data.keyboard.rawcode << std::endl;
+    LOG << "Setting Prefix data. KeyChar " << prefix.data.keyboard.keychar  << std::endl;
+    LOG << "Setting Prefix data. Modifiers " << prefix.mask << std::endl;
+    prefix_event = prefix;
 }

@@ -5,6 +5,7 @@
 #include <jni.h>
 #include <stdbool.h>
 #include <uiohook.h>
+#include <cehook/include/pipe_const.h>
 
 #include "jni_Converter.h"
 #include "jni_Errors.h"
@@ -103,6 +104,9 @@ void jni_EventDispatcher(uiohook_event * const event) {
                     org_iceterm_cehook_GlobalScreen$NativeHookThread->cls,
                     org_iceterm_cehook_GlobalScreen$NativeHookThread->dispatchEvent,
                     NativeInputEvent_obj);
+
+
+            LOG << "Sending reserved from java " << std::endl;
 
             // Set the propagate flag from java.
             event->reserved = (unsigned short) (*env).GetShortField(

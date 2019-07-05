@@ -1,21 +1,3 @@
-/* libUIOHook: Cross-platfrom userland keyboard and mouse hooking.
- * Copyright (C) 2006-2017 Alexander Barker.  All Rights Received.
- * https://github.com/kwhat/libuiohook/
- *
- * libUIOHook is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * libUIOHook is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #ifndef __UIOHOOK_H
 #define __UIOHOOK_H
 
@@ -31,25 +13,9 @@
 // System level errors.
 #define UIOHOOK_ERROR_OUT_OF_MEMORY				0x02
 
-// Unix specific errors.
-#define UIOHOOK_ERROR_X_OPEN_DISPLAY			0x20
-#define UIOHOOK_ERROR_X_RECORD_NOT_FOUND		0x21
-#define UIOHOOK_ERROR_X_RECORD_ALLOC_RANGE		0x22
-#define UIOHOOK_ERROR_X_RECORD_CREATE_CONTEXT	0x23
-#define UIOHOOK_ERROR_X_RECORD_ENABLE_CONTEXT	0x24
-#define UIOHOOK_ERROR_X_RECORD_GET_CONTEXT		0x25
-
 // Windows specific errors.
 #define UIOHOOK_ERROR_SET_WINDOWS_HOOK_EX		0x30
 #define UIOHOOK_ERROR_GET_MODULE_HANDLE			0x31
-
-// Darwin specific errors.
-#define UIOHOOK_ERROR_AXAPI_DISABLED			0x40
-#define UIOHOOK_ERROR_CREATE_EVENT_PORT			0x41
-#define UIOHOOK_ERROR_CREATE_RUN_LOOP_SOURCE	0x42
-#define UIOHOOK_ERROR_GET_RUNLOOP				0x43
-#define UIOHOOK_ERROR_CREATE_OBSERVER			0x44
-/* End Error Codes */
 
 /* Begin Log Levels and Function Prototype */
 typedef enum _log_level {
@@ -70,12 +36,6 @@ typedef enum _event_type {
 	EVENT_KEY_TYPED,
 	EVENT_KEY_PRESSED,
 	EVENT_KEY_RELEASED,
-	EVENT_MOUSE_CLICKED,
-	EVENT_MOUSE_PRESSED,
-	EVENT_MOUSE_RELEASED,
-	EVENT_MOUSE_MOVED,
-	EVENT_MOUSE_DRAGGED,
-	EVENT_MOUSE_WHEEL
 } event_type;
 
 typedef struct _screen_data {
@@ -91,29 +51,9 @@ typedef struct _keyboard_event_data {
 	uint16_t rawcode;
 	uint16_t keychar;
 } keyboard_event_data,
-		key_pressed_event_data,
-		key_released_event_data,
-		key_typed_event_data;
-
-typedef struct _mouse_event_data {
-	uint16_t button;
-	uint16_t clicks;
-	int16_t x;
-	int16_t y;
-} mouse_event_data,
-		mouse_pressed_event_data,
-		mouse_released_event_data,
-		mouse_clicked_event_data;
-
-typedef struct _mouse_wheel_event_data {
-	uint16_t clicks;
-	int16_t x;
-	int16_t y;
-	uint8_t type;
-	uint16_t amount;
-	int16_t rotation;
-	uint8_t direction;
-} mouse_wheel_event_data;
+    key_pressed_event_data,
+    key_released_event_data,
+    key_typed_event_data;
 
 typedef struct _uiohook_event {
 	event_type type;
@@ -122,8 +62,6 @@ typedef struct _uiohook_event {
 	uint16_t reserved;
 	union {
 		keyboard_event_data keyboard;
-		mouse_event_data mouse;
-		mouse_wheel_event_data wheel;
 	} data;
 } uiohook_event;
 
@@ -387,23 +325,6 @@ typedef void (*dispatcher_t)(uiohook_event *const);
 #define MASK_SCROLL_LOCK						1 << 15
 /* End Virtual Modifier Masks */
 
-
-/* Begin Virtual Mouse Buttons */
-#define MOUSE_NOBUTTON							0	// Any Button
-#define MOUSE_BUTTON1							1	// Left Button
-#define MOUSE_BUTTON2							2	// Right Button
-#define MOUSE_BUTTON3							3	// Middle Button
-#define MOUSE_BUTTON4							4	// Extra Mouse Button
-#define MOUSE_BUTTON5							5	// Extra Mouse Button
-
-#define WHEEL_UNIT_SCROLL						1
-#define WHEEL_BLOCK_SCROLL						2
-
-#define WHEEL_VERTICAL_DIRECTION				3
-#define WHEEL_HORIZONTAL_DIRECTION              4
-/* End Virtual Mouse Buttons */
-
-
 #ifdef _WIN32
 #define UIOHOOK_API __declspec(dllexport)
 #else
@@ -418,7 +339,7 @@ extern "C" {
 	UIOHOOK_API void hook_set_logger_proc(logger_t logger_proc);
 
 	// Send a virtual event back to the system.
-	UIOHOOK_API void hook_post_event(uiohook_event * const event);
+	UIOHOOK_API void hook_post_event(uiohook_event * const postedEvent);
 
 	// Set the event callback function.
 	UIOHOOK_API void hook_set_dispatch_proc(dispatcher_t dispatch_proc);
@@ -427,7 +348,7 @@ extern "C" {
 
     UIOHOOK_API void pass_hook_handle(HHOOK keyboard_hhook);
 
-    UIOHOOK_API void process_key_pressed(int nCode, WPARAM wParam, LPARAM lParam);
+    UIOHOOK_API int process_key_pressed(int nCode, WPARAM wParam, LPARAM lParam);
 
 	// Insert the event hook.
 	UIOHOOK_API int hook_run();
@@ -443,19 +364,6 @@ extern "C" {
 
 	// Retrieves the keyboard auto repeat delay.
 	UIOHOOK_API long int hook_get_auto_repeat_delay();
-
-	// Retrieves the mouse acceleration multiplier.
-	UIOHOOK_API long int hook_get_pointer_acceleration_multiplier();
-
-	// Retrieves the mouse acceleration threshold.
-	UIOHOOK_API long int hook_get_pointer_acceleration_threshold();
-
-	// Retrieves the mouse sensitivity.
-	UIOHOOK_API long int hook_get_pointer_sensitivity();
-
-	// Retrieves the double/triple click interval.
-	UIOHOOK_API long int hook_get_multi_click_time();
-
 #ifdef __cplusplus
 }
 #endif

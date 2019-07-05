@@ -1,6 +1,7 @@
 package org.iceterm.cehook;
 
 // Imports.
+import org.iceterm.IceTermOptionsProvider;
 import org.iceterm.cehook.dispatcher.DefaultDispatchService;
 import org.iceterm.cehook.keyboard.NativeKeyEvent;
 import org.iceterm.cehook.keyboard.NativeKeyListener;
@@ -20,10 +21,6 @@ import java.util.logging.Logger;
  * native library. That includes registering and un-registering the native hook
  * with the underlying operating system and adding global keyboard and mouse
  * listeners.
- *
- * @author Alexander Barker (<a href="mailto:alex@1stleg.com">alex@1stleg.com</a>)
- * @version 2.1
- * @since 1.0
  */
 public class GlobalScreen {
 	/**
@@ -215,7 +212,16 @@ public class GlobalScreen {
 		 * @param event the <code>NativeInputEvent</code> sent to the registered event listeners.
 		 */
 		protected static void dispatchEvent(NativeInputEvent event) {
+//			System.out.println("Dispatching Event");
+//			IceTermOptionsProvider options = IceTermOptionsProvider.getInstance();
+//			GlobalScreen.postNativeEvent(new NativeKeyEvent(
+//					NativeKeyEvent.NATIVE_KEY_PRESSED,
+//					options.getPrefixKey().getModifiers(),
+//					options.getPrefixKey().getKeyCode(),
+//					options.getPrefixKey().getKeyCode(),
+//					options.getPrefixKey().getKeyChar()));
 			if (eventExecutor != null) {
+				System.out.println("Executing");
 				eventExecutor.execute(new EventDispatchTask(event));
 			}
 		}
@@ -323,7 +329,7 @@ public class GlobalScreen {
 	 * <code>NATIVE_KEY_RELEASED</code> events for each required modifier.
 	 * <code>NATIVE_KEY_TYPED</code> events will first translate the associated
 	 * keyChar to its respective virtual code and then produce a
-	 * <code>NATIVE_KEY_PRESSED</code> followed by a <code>NATIVE_KEY_RELEASED</code>
+	 * <code>NATIVE_KEY_PRESSED</code> followed by a <code>NATuVE_KEY_RELEASED</code>
 	 * event using that virtual code.  If the JNativeHook is unable to translate
 	 * the keyChar to its respective virtual code, the event is ignored.
 	 * <p>
@@ -396,14 +402,17 @@ public class GlobalScreen {
 			for (int i = 0; i < listeners.length; i++) {
 				switch (nativeEvent.getID()) {
 					case NativeKeyEvent.NATIVE_KEY_PRESSED:
+						System.out.println("NATIVE_KEY_PRESSED");
 						listeners[i].nativeKeyPressed(nativeEvent);
 						break;
 
 					case NativeKeyEvent.NATIVE_KEY_TYPED:
+						System.out.println("NATIVE_KEY_TYPED");
 						listeners[i].nativeKeyTyped(nativeEvent);
 						break;
 
 					case NativeKeyEvent.NATIVE_KEY_RELEASED:
+						System.out.println("NATIVE_KEY_RELEASED");
 						listeners[i].nativeKeyReleased(nativeEvent);
 						break;
 				}

@@ -1,21 +1,3 @@
-/* libUIOHook: Cross-platfrom userland keyboard and mouse hooking.
- * Copyright (C) 2006-2017 Alexander Barker.  All Rights Received.
- * https://github.com/kwhat/libuiohook/
- *
- * libUIOHook is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * libUIOHook is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -36,12 +18,7 @@
 static const uint16_t keycode_scancode_table[][2] = {
 	/* idx		{ vk_code,				scancode				}, */
 	/*   0 */	{ VC_UNDEFINED,			0x0000					},	// 0x00
-	/*   1 */	{ MOUSE_BUTTON1,		VK_ESCAPE				},	// 0x01
-	/*   2 */	{ MOUSE_BUTTON2,		0x0031					},	// 0x02
 	/*   3 */	{ VC_UNDEFINED,			0x0032					},	// 0x03 VK_CANCEL
-	/*   4 */	{ MOUSE_BUTTON3,		0x0033					},	// 0x04
-	/*   5 */	{ MOUSE_BUTTON4,		0x0034					},	// 0x05
-	/*   6 */	{ MOUSE_BUTTON5,		0x0035					},	// 0x06
 	/*   7 */	{ VC_UNDEFINED,			0x0036					},	// 0x07							Undefined
 	/*   8 */	{ VC_BACKSPACE,			0x0037					},	// 0x08 VK_BACK
 	/*   9 */	{ VC_TAB,				0x0038					},	// 0x09 VK_TAB

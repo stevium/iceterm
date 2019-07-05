@@ -5,46 +5,46 @@ set(CMAKE_CXX_STANDARD 14)
 
 include_directories(jni)
 include_directories(jni/include)
-include_directories(conemuhook/include)
+include_directories(jni/cehook/include)
 
 add_library(iceterm SHARED
-        conemuhook/conemupipe/pipe_server.cpp
-        conemuhook/conemupipe/pipe_server.h
-        conemuhook/post_event.cpp
-        conemuhook/input_helper.h
-        conemuhook/input_helper.cpp
-        conemuhook/logger.h
-        conemuhook/logger.cpp
+        jni/cehook/cepipe/pipe_server.cpp
+        jni/cehook/cepipe/pipe_server.h
+        jni/cehook/post_event.cpp
+        jni/cehook/input_helper.h
+        jni/cehook/input_helper.cpp
+        jni/cehook/logger.h
+        jni/cehook/logger.cpp
         jni/org_iceterm_ceintegration_GuiMacroExecutor.cpp
         jni/org_iceterm_ceintegration_GuiMacroExecutor.h
+        jni/org_iceterm_cehook_GlobalScreen.cpp
         jni/org_iceterm_cehook_ConEmuHook.cpp
         jni/org_iceterm_cehook_ConEmuHook.h
-        jni/jni_Globals.cpp
-        jni/jni_Globals.h
-        jni/jni_Converter.cpp
-        jni/jni_Converter.h
-        jni/jni_Logger.cpp
-        jni/jni_Logger.h
-        jni/jni_Errors.cpp
-        jni/jni_Errors.h
-        jni/jni_EventDispatcher.cpp
-        jni/jni_EventDispatcher.h
-        jni/jni_Load.cpp
-#        jni/org_iceterm_cehook_GlobalScreen.cpp
+        jni/cehook/jni_Globals.cpp
+        jni/cehook/jni_Globals.h
+        jni/cehook/jni_Converter.cpp
+        jni/cehook/jni_Converter.h
+        jni/cehook/jni_Logger.cpp
+        jni/cehook/jni_Logger.h
+        jni/cehook/jni_Errors.cpp
+        jni/cehook/jni_Errors.h
+        jni/cehook/jni_EventDispatcher.cpp
+        jni/cehook/jni_EventDispatcher.h
+        jni/cehook/jni_Load.cpp
         )
 
-add_library(ConEmuHook SHARED
-        conemuhook/conemupipe/pipe_client.cpp
-        conemuhook/conemupipe/pipe_client.h
-#        conemuhook/conemupipe/pipe_client_driver.cpp
-        conemuhook/logger.h
-        conemuhook/logger.cpp
-        conemuhook/input_helper.h
-        conemuhook/input_helper.cpp
-        conemuhook/input_hook.cpp
-        conemuhook/system_properties.cpp
-        conemuhook/post_event.cpp
-#        conemuhook/conemupipe/pipe_server_driver.cpp
+add_library(cehook SHARED
+        jni/cehook/cepipe/pipe_client.cpp
+        jni/cehook/cepipe/pipe_client.h
+#        cehook/cepipe/pipe_client_driver.cpp
+        jni/cehook/logger.h
+        jni/cehook/logger.cpp
+        jni/cehook/input_helper.h
+        jni/cehook/input_helper.cpp
+        jni/cehook/input_hook.cpp
+        jni/cehook/system_properties.cpp
+#        jni/cehook/post_event.cpp
+#        cehook/cepipe/pipe_server_driver.cpp
         )
 
 find_package(JNI REQUIRED)

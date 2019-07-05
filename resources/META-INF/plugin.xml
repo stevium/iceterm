@@ -17,7 +17,7 @@
   <idea-version since-build="173.0"/>
 
   <extensions defaultExtensionNs="com.intellij">
-    <toolWindow id="IdeaConEmu" secondary="true" icon="/iceterm/plus.png" anchor="right"
+    <toolWindow id="IdeaConEmu" secondary="true" icon="/iceterm/OpenTerminal_13x13.svg" anchor="right"
                 factoryClass="org.iceterm.IceTermToolWindowFactory"/>
 
     <projectConfigurable groupId="tools" groupWeight="130" displayName="IceTerm" id="iceterm"

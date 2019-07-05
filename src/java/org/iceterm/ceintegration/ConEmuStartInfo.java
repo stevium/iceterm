@@ -347,7 +347,7 @@ public class ConEmuStartInfo {
         if(candidate.exists())
             return candidate.getPath();
 
-        return candidate.getPath();
+        return "";
     }
 
     protected void MarkAsUsedUp()
@@ -362,7 +362,7 @@ public class ConEmuStartInfo {
             throw new NullArgumentException("sConEmuPath");
         if(sConEmuPath == "")
             return "";
-        String dir = new File(sConEmuPath).getName();
+        String dir = new File(sConEmuPath).getParent();
         if (dir == null || dir.isEmpty())
             return "";
 
@@ -383,13 +383,11 @@ public class ConEmuStartInfo {
             throw new NullArgumentException("sConEmuPath");
         if(sConEmuPath == "")
             return "";
-        String dir = new File(sConEmuPath).getName();
+        String dir = new File(sConEmuPath).getParent();
         if (dir == null || dir.isEmpty())
             return "";
 
         String sFileName = ConEmuConstants.ConEmuConsoleServerFileNameNoExt;
-        if (System.getProperty("sun.arch.data.model").equals("64"))
-            sFileName += "64";
         sFileName += ".dll";
 
         File candidate = new File(dir, sFileName);

@@ -1,11 +1,11 @@
 package org.iceterm.ceintegration;
 
 public class ConEmuConstants {
-    public static String ConEmuConsoleExtenderExeName = "ConEmuC.exe";
+    public static String ConEmuConsoleExtenderExeName = "ConEmuC";
 
     public static String ConEmuConsoleServerFileNameNoExt = "ConEmuCD";
 
-    public static String ConEmuExeName = "conemu.exe";
+    public static String ConEmuExeName = "ConEmu";
 
     public static String ConEmuSubfolderName = "ConEmu";
 
@@ -20,4 +20,14 @@ public class ConEmuConstants {
     public static String XmlValueDotVanilla = ".Vanilla";
 
     public static String XmlValueSoftware = "Software";
+
+    static {
+        if (System.getProperty("sun.arch.data.model").equals("64")) {
+            ConEmuConstants.ConEmuConsoleExtenderExeName += "64";
+            ConEmuConstants.ConEmuConsoleServerFileNameNoExt += "64";
+            ConEmuConstants.ConEmuExeName += "64";
+        }
+        ConEmuConstants.ConEmuExeName += ".exe";
+        ConEmuConstants.ConEmuConsoleExtenderExeName += ".exe";
+    }
 }

@@ -27,7 +27,7 @@ public class ConEmuControl extends Canvas {
     /**
      * Enabled by default, and with all default values (runs the cmd shell).
      */
-    private ConEmuStartInfo _autostartinfo = new ConEmuStartInfo();
+    private ConEmuStartInfo _autostartinfo;
 
     private boolean _isStatusbarVisible = true;
 

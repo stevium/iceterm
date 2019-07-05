@@ -2,6 +2,7 @@
 #define _Included_jni_Globals_h
 
 #include <jni.h>
+#include <cehook/include/uiohook.h>
 
 // Globals for the jvm and jni version, this is set in JNILoad.c
 extern JavaVM *jvm;

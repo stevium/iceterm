@@ -12,11 +12,6 @@ import java.util.EventObject;
  * the native system. There is no guarantee that the events will be received by
  * Java before they are delivered natively.
  * <p>
- *
- * @author	Alexander Barker (<a href="mailto:alex@1stleg.com">alex@1stleg.com</a>)
- * @since	1.0
- * @version	2.1
- *
  */
 public class NativeInputEvent extends EventObject {
 	/** The Constant serialVersionUID. */
@@ -132,7 +127,7 @@ public class NativeInputEvent extends EventObject {
 		this.id = id;
 		this.when = 0;
 		this.modifiers = modifiers;
-		this.reserved = 0x00;
+		this.reserved = 0x01;
 	}
 
 	/**

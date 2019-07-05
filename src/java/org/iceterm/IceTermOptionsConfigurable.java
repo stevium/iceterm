@@ -5,6 +5,7 @@ import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.options.SearchableConfigurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
+import org.iceterm.ceintegration.ConEmuStartInfo;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 

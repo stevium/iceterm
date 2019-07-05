@@ -12,10 +12,6 @@ import java.util.concurrent.TimeUnit;
  * Swing compatible implementation of the <code>ExecutorService</code> used to dispatch native events.  This wraps
  * event dispatching with {@link java.awt.EventQueue#invokeLater}.
  *
- * @author	Alexander Barker (<a href="mailto:alex@1stleg.com">alex@1stleg.com</a>)
- * @version	2.0
- * @since	2.0
- *
  * @see  java.util.concurrent.ExecutorService
  */
 public class SwingDispatchService extends AbstractExecutorService {

@@ -54,10 +54,13 @@ public class IceTermView {
     private WindowInfoImpl windowInfo;
     private Map<String, WindowInfoImpl> mySameDockWindows = new HashMap<>();
     private WinDef.HWND foregroundWindow;
+    private IceTermProjectOptionsProvider myProjectOptionsProvider;
+    private IceTermOptionsProvider myOptionsProvider;
 
     public IceTermView(@NotNull Project project) {
         myProject = project;
         ideaIceTermToolWindow = new IceTermToolWindow();
+        myProjectOptionsProvider = IceTermProjectOptionsProvider.getInstance(project);
     }
 
     void initToolWindow(@NotNull ToolWindow toolWindow) {
@@ -115,14 +118,21 @@ public class IceTermView {
     private ConEmuControl createConEmuControl() {
         ideaIceTermToolWindow.jpanel.setBackground(Color.darkGray);
         ConEmuStartInfo startinfo = new ConEmuStartInfo();
-        StringBuilder sbText = new StringBuilder();
-        startinfo.setConEmuExecutablePath(conEmuExe);
-        startinfo.setConEmuConsoleServerExecutablePath(conEmuCD);
-//        startinfo.setConsoleProcessCommandLine("ping 8.8.8.8");
+//        StringBuilder sbText = new StringBuilder();
+        IceTermOptionsProvider myOptionsProvider = IceTermOptionsProvider.getInstance();
+        IceTermProjectOptionsProvider myProjectOptionsProvider = IceTermProjectOptionsProvider.getInstance(myProject);
+        startinfo.setsStartupDirectory(myProjectOptionsProvider.getStartingDirectory());
+        startinfo.setConsoleProcessCommandLine(myOptionsProvider.getShellTask());
+        startinfo.setConEmuExecutablePath(myOptionsProvider.defaultConEmuPath());
+
+//        startinfo.setConEmuExecutablePath(conEmuExe);
+
+//        startinfo.setConEmuConsoleServerExecutablePath(conEmuCD);
+//        startinfo.setConsoleProcessCommandLine("{Shells::PowerShell}");
         startinfo.setLogLevel(ConEmuStartInfo.LogLevels.Basic);
-        startinfo.setAnsiStreamChunkReceivedEventSink((source, event) -> {
-            sbText.append(event.GetMbcsText());
-        });
+//        startinfo.setAnsiStreamChunkReceivedEventSink((source, event) -> {
+//            sbText.append(event.GetMbcsText());
+//        });
 
         conEmuControl = new ConEmuControl(startinfo);
         conEmuControl.setMinimumSize(new Dimension(400, 400));

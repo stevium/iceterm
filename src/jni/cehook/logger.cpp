@@ -30,26 +30,28 @@
 static bool default_logger(unsigned int level, const char *format, ...) {
 	bool status = false;
 
-	#ifndef USE_QUIET
-	va_list args;
-	switch (level) {
-		#ifdef USE_DEBUG
-		case LOG_LEVEL_DEBUG:
-		#endif
-		case LOG_LEVEL_INFO:
-			va_start(args, format);
-  			status = vfprintf(stdout, format, args) >= 0;
-			va_end(args);
-			break;
-
-		case LOG_LEVEL_WARN:
-		case LOG_LEVEL_ERROR:
-			va_start(args, format);
-  			status = vfprintf(stderr, format, args) >= 0;
-			va_end(args);
-			break;
-	}
-	#endif
+//	#ifndef USE_QUIET
+//	va_list args;
+//	switch (level) {
+//		#ifdef USE_DEBUG
+//		case LOG_LEVEL_DEBUG:
+//		#endif
+//		case LOG_LEVEL_INFO:
+//			va_start(args, format);
+//  			status = vfprintf(stdout, format, args) >= 0;
+//			va_end(args);
+//            fflush(stdout);
+//			break;
+//
+//		case LOG_LEVEL_WARN:
+//		case LOG_LEVEL_ERROR:
+//			va_start(args, format);
+//  			status = vfprintf(stderr, format, args) >= 0;
+//			va_end(args);
+//            fflush(stderr);
+//			break;
+//	}
+//	#endif
 
 	return status;
 }

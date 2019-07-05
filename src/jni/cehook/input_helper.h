@@ -14,10 +14,6 @@ typedef void* (CALLBACK *KbdLayerDescriptor) (VOID);
 #define WCH_NONE		0xF000
 #define WCH_DEAD		0xF001
 
-#ifndef WM_MOUSEHWHEEL
-#define WM_MOUSEHWHEEL	0x020E
-#endif
-
 typedef struct _VK_TO_WCHARS {
 	BYTE VirtualKey;
 	BYTE Attributes;
