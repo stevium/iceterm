@@ -33,6 +33,10 @@ static dispatcher_t dispatcher = NULL;
 
 int hook_result = 0;
 
+int prefix_mode = 0;
+
+bool is_prefix;
+
 static bool is_prefix_key(uiohook_event event);
 
 UIOHOOK_API void hook_set_dispatch_proc(dispatcher_t dispatch_proc) {
@@ -203,13 +207,21 @@ static int process_key_pressed(int nCode, WPARAM wParam, LPARAM lParam) {
 
 //            logger(LOG_LEVEL_INFO, "%s [%u]: Key %#X typed. (%lc)\n",
 //                   __FUNCTION__, __LINE__, event.data.keyboard.keycode, (wint_t) event.data.keyboard.keychar);
-
-            // Fire key typed event.
-            dispatch_event(&event);
         }
     }
 
-    if(is_prefix_key(event)) {
+    if (is_prefix_key(event)) {
+        prefix_mode = 1;
+        return -1;
+    }
+
+    if(prefix_mode) {
+        // Fire key typed event.
+        dispatch_event(&event);
+        if(event.mask) {
+            return -1;
+        }
+        prefix_mode = 0;
         return -1;
     }
 
@@ -217,9 +229,10 @@ static int process_key_pressed(int nCode, WPARAM wParam, LPARAM lParam) {
 }
 
 static bool is_prefix_key(uiohook_event event) {
-    return (prefix_key != NULL)
+    is_prefix = (prefix_key != NULL)
         && (prefix_key->mask == event.mask)
         && (prefix_key->data.keyboard.keycode == event.data.keyboard.rawcode);
+    return is_prefix;
 //            prefix_key->data.keyboard.keychar == event.data.keyboard.keychar);
 }
 
@@ -232,7 +245,10 @@ static void process_key_released(int nCode, WPARAM wParam, LPARAM lParam) {
 //    event.reserved = 0x00;
 //
 //    event.type = EVENT_KEY_RELEASED;
-//    event.mask = get_modifiers();
+    event.mask = get_modifiers();
+    if(prefix_mode && !event.mask && !is_prefix) {
+        prefix_mode = 0;
+    }
 //
 //    event.data.keyboard.keycode = keycode_to_scancode(wParam, HIWORD(lParam));
 //    event.data.keyboard.rawcode = wParam;
@@ -255,17 +271,19 @@ UIOHOOK_API LRESULT CALLBACK keyboard_hook_event_proc(int nCode, WPARAM wParam, 
     if (ph == INVALID_HANDLE_VALUE)
         return 0;
 
-    int temp_hook_result = 0;
     if ((lParam & (1 << 30)) == 0) {
-        temp_hook_result = process_key_pressed(nCode, wParam, lParam);
+         hook_result = process_key_pressed(nCode, wParam, lParam);
     } else {
         process_key_released(nCode, wParam, lParam);
     }
 
-//    hook_result = temp_hook_result;
-    if(temp_hook_result == -1) {
-        hook_result = -1;
-    }
+//    hook_result = prefix_mode;
+//    if(prefix_mode) {
+//        hook_result = -1;
+//    } else {
+//        hook_result = 0;
+//    }
+
 //	KBDLLHOOKSTRUCT *kbhook = (KBDLLHOOKSTRUCT *) lParam;
 //    process_key_pressed(nCode, wParam, lParam);
 //	switch (wParam) {
