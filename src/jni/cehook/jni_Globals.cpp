@@ -11,6 +11,7 @@ NativeHookException *org_iceterm_cehook_NativeHookException = NULL;
 NativeMonitorInfo *org_iceterm_cehook_NativeMonitorInfo = NULL;
 NativeInputEvent *org_iceterm_cehook_NativeInputEvent = NULL;
 NativeKeyEvent *org_iceterm_cehook_keyboard_NativeKeyEvent = NULL;
+NativeMouseEvent *org_iceterm_cehook_mouse_NativeMouseEvent = NULL;
 Object *java_lang_Object = NULL;
 Integer *java_lang_Integer = NULL;
 System *java_lang_System = NULL;
@@ -254,7 +255,51 @@ static void destroy_NativeKeyEvent(JNIEnv *env) {
 	}
 }
 
+static int create_NativeMouseEvent(JNIEnv *env) {
+    int status = JNI_ERR;
 
+    // Class and Constructor for the NativeMouseEvent Object.
+    jclass NativeMouseEvent_class = (*env).FindClass("org/iceterm/cehook/mouse/NativeMouseEvent");
+    if (NativeMouseEvent_class != NULL) {
+        // Get the method ID for NativeMouseEvent constructor.
+        jmethodID init = (*env).GetMethodID(NativeMouseEvent_class, "<init>", "(IIIIII)V");
+
+        // Get the method ID for NativeMouseEvent.getButton().
+        jmethodID getButton = (*env).GetMethodID(NativeMouseEvent_class, "getButton", "()I");
+
+        // Get the method ID for NativeMouseEvent.getClickCount().
+        jmethodID getClickCount = (*env).GetMethodID(NativeMouseEvent_class, "getClickCount", "()I");
+
+        // Get the method ID for NativeMouseEvent.getX().
+        jmethodID getX = (*env).GetMethodID(NativeMouseEvent_class, "getX", "()I");
+
+        // Get the method ID for NativeMouseEvent.getY().
+        jmethodID getY = (*env).GetMethodID(NativeMouseEvent_class, "getY", "()I");
+
+        if ((*env).ExceptionCheck() == JNI_FALSE) {
+            org_iceterm_cehook_mouse_NativeMouseEvent = static_cast<NativeMouseEvent *>(malloc(
+                    sizeof(NativeMouseEvent)));
+            if (org_iceterm_cehook_mouse_NativeMouseEvent != NULL) {
+                // Populate our structure for later use.
+                org_iceterm_cehook_mouse_NativeMouseEvent->cls = (jclass) (*env).NewGlobalRef(NativeMouseEvent_class);
+                org_iceterm_cehook_mouse_NativeMouseEvent->parent = org_iceterm_cehook_NativeInputEvent;
+                org_iceterm_cehook_mouse_NativeMouseEvent->init = init;
+                org_iceterm_cehook_mouse_NativeMouseEvent->getButton = getButton;
+                org_iceterm_cehook_mouse_NativeMouseEvent->getClickCount = getClickCount;
+                org_iceterm_cehook_mouse_NativeMouseEvent->getX = getX;
+                org_iceterm_cehook_mouse_NativeMouseEvent->getY = getY;
+
+                status = JNI_OK;
+            }
+            else {
+                jni_ThrowException(env, "java/lang/OutOfMemoryError", "Failed to allocate native memory.");
+                status = JNI_ENOMEM;
+            }
+        }
+    }
+
+    return status;
+}
 
 static int create_Object(JNIEnv *env) {
 	int status = JNI_ERR;
@@ -442,6 +487,18 @@ static inline void destroy_Logger(JNIEnv *env) {
 	}
 }
 
+static void destroy_NativeMouseEvent(JNIEnv *env) {
+    if (org_iceterm_cehook_mouse_NativeMouseEvent != NULL) {
+        // The class *should* never be null if the struct was allocated, but we will check anyway.
+        if (org_iceterm_cehook_mouse_NativeMouseEvent->cls != NULL) {
+            (*env).DeleteGlobalRef(org_iceterm_cehook_mouse_NativeMouseEvent->cls);
+        }
+
+        // Free struct memory.
+        free(org_iceterm_cehook_mouse_NativeMouseEvent);
+        org_iceterm_cehook_mouse_NativeMouseEvent = NULL;
+    }
+}
 int jni_CreateGlobals(JNIEnv *env) {
 	int status = create_GlobalScreen(env);
 
@@ -460,6 +517,10 @@ int jni_CreateGlobals(JNIEnv *env) {
 	if (status == JNI_OK && (*env).ExceptionCheck() == JNI_FALSE) {
 		status = create_NativeKeyEvent(env);
 	}
+
+    if (status == JNI_OK && (*env).ExceptionCheck() == JNI_FALSE) {
+        status = create_NativeMouseEvent(env);
+    }
 
 	if (status == JNI_OK && (*env).ExceptionCheck() == JNI_FALSE) {
 		status = create_Object(env);
@@ -491,6 +552,7 @@ int jni_DestroyGlobals(JNIEnv *env) {
 	destroy_NativeHookException(env);
 	destroy_NativeInputEvent(env);
 	destroy_NativeKeyEvent(env);
+    destroy_NativeMouseEvent(env);
 	destroy_Object(env);
 	destroy_Integer(env);
 	destroy_System(env);

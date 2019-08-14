@@ -254,7 +254,7 @@ public class ConEmuStartInfo {
     }
 
     public LogLevels getLogLevel() {
-        return logLevel;
+        return LogLevels.Detailed;
     }
 
     public void setLogLevel(LogLevels logLevel) {

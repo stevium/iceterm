@@ -1,14 +1,13 @@
 package org.iceterm.cehook;
 
 // Imports.
-import org.iceterm.IceTermOptionsProvider;
 import org.iceterm.cehook.dispatcher.DefaultDispatchService;
 import org.iceterm.cehook.keyboard.NativeKeyEvent;
 import org.iceterm.cehook.keyboard.NativeKeyListener;
+import org.iceterm.cehook.mouse.NativeMouseEvent;
+import org.iceterm.cehook.mouse.NativeMouseListener;
 
 import javax.swing.event.EventListenerList;
-import java.io.File;
-import java.util.Iterator;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Logger;
 
@@ -137,6 +136,20 @@ public class GlobalScreen {
 	}
 
 	/**
+	 * Adds the specified native mouse listener to receive mouse events from the
+	 * native system. If listener is null, no exception is thrown and no action
+	 * is performed.
+	 *
+	 * @param listener a native mouse listener object
+	 */
+	public static void addNativeMouseListener(NativeMouseListener listener) {
+		if (listener != null) {
+			eventListeners.add(NativeMouseListener.class, listener);
+		}
+	}
+
+
+	/**
 	 * Specialized thread implementation for the native hook.
 	 */
 	public static class NativeHookThread extends Thread {
@@ -212,14 +225,17 @@ public class GlobalScreen {
 		 * @param event the <code>NativeInputEvent</code> sent to the registered event listeners.
 		 */
 		protected static void dispatchEvent(NativeInputEvent event) {
-//			System.out.println("Dispatching Event");
+			System.out.println("Dispatching Event");
 //			IceTermOptionsProvider options = IceTermOptionsProvider.getInstance();
 //			GlobalScreen.postNativeEvent(new NativeKeyEvent(
 //					NativeKeyEvent.NATIVE_KEY_PRESSED,
 //					options.getPrefixKey().getModifiers(),
 //					options.getPrefixKey().getKeyCode(),
 //					options.getPrefixKey().getKeyCode(),
-//					options.getPrefixKey().getKeyChar()));
+//					options.getprefixkey().getkeychar()));
+
+
+
 			if (eventExecutor != null) {
 				System.out.println("Executing");
 				eventExecutor.execute(new EventDispatchTask(event));
@@ -383,6 +399,42 @@ public class GlobalScreen {
 		public void run() {
 			if (event instanceof NativeKeyEvent) {
 				processKeyEvent((NativeKeyEvent) event);
+			}
+			else if (event instanceof NativeMouseEvent) {
+			    processMouseButtonEvent((NativeMouseEvent) event);
+			}
+		}
+
+		/**
+		 * Processes native mouse button events by dispatching them to all registered
+		 * <code>NativeMouseListener</code> objects.
+		 *
+		 * @param nativeEvent the <code>NativeMouseEvent</code> to dispatch.
+		 * @see NativeMouseEvent
+		 * @see NativeMouseListener
+		 * @see #addNativeMouseListener(NativeMouseListener)
+		 */
+		private void processMouseButtonEvent(NativeMouseEvent nativeEvent) {
+			NativeMouseListener[] listeners = eventListeners.getListeners(NativeMouseListener.class);
+			System.out.println("Processing Mouse Button Event");
+
+			for (int i = 0; i < listeners.length; i++) {
+				switch (nativeEvent.getID()) {
+					case NativeMouseEvent.NATIVE_MOUSE_CLICKED:
+						System.out.println("NATIVE_MOUSE_CLICKED");
+						listeners[i].nativeMouseClicked(nativeEvent);
+						break;
+
+					case NativeMouseEvent.NATIVE_MOUSE_PRESSED:
+						System.out.println("NATIVE_MOUSE_PRESSED");
+						listeners[i].nativeMousePressed(nativeEvent);
+						break;
+
+					case NativeMouseEvent.NATIVE_MOUSE_RELEASED:
+						System.out.println("NATIVE_MOUSE_RELEASED");
+						listeners[i].nativeMouseReleased(nativeEvent);
+						break;
+				}
 			}
 		}
 

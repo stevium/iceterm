@@ -1,0 +1,22 @@
+#ifndef _Included_org_iceterm_cehook_mouse_NativeMouseEvent
+#define _Included_org_iceterm_cehook_mouse_NativeMouseEvent
+
+#define org_iceterm_cehook_mouse_NativeMouseEvent_NATIVE_MOUSE_FIRST		2500
+#define org_iceterm_cehook_mouse_NativeMouseEvent_NATIVE_MOUSE_LAST		2505
+#define org_iceterm_cehook_mouse_NativeMouseEvent_NATIVE_MOUSE_CLICKED			org_iceterm_cehook_mouse_NativeMouseEvent_NATIVE_MOUSE_FIRST
+#define org_iceterm_cehook_mouse_NativeMouseEvent_NATIVE_MOUSE_PRESSED		1 + org_iceterm_cehook_mouse_NativeMouseEvent_NATIVE_MOUSE_FIRST
+#define org_iceterm_cehook_mouse_NativeMouseEvent_NATIVE_MOUSE_RELEASED	2 + org_iceterm_cehook_mouse_NativeMouseEvent_NATIVE_MOUSE_FIRST
+#define org_iceterm_cehook_mouse_NativeMouseEvent_NATIVE_MOUSE_MOVED		3 + org_iceterm_cehook_mouse_NativeMouseEvent_NATIVE_MOUSE_FIRST
+#define org_iceterm_cehook_mouse_NativeMouseEvent_NATIVE_MOUSE_DRAGGED		4 + org_iceterm_cehook_mouse_NativeMouseEvent_NATIVE_MOUSE_FIRST
+#define org_iceterm_cehook_mouse_NativeMouseEvent_NATIVE_MOUSE_WHEEL		5 + org_iceterm_cehook_mouse_NativeMouseEvent_NATIVE_MOUSE_FIRST
+
+
+#define org_iceterm_cehook_mouse_NativeMouseEvent_NOBUTTON					0	// AnyButton
+#define org_iceterm_cehook_mouse_NativeMouseEvent_BUTTON1					1
+#define org_iceterm_cehook_mouse_NativeMouseEvent_BUTTON2					2
+#define org_iceterm_cehook_mouse_NativeMouseEvent_BUTTON3					3
+#define org_iceterm_cehook_mouse_NativeMouseEvent_BUTTON4					4	// Extra Mouse Button
+#define org_iceterm_cehook_mouse_NativeMouseEvent_BUTTON5					5	// Extra Mouse Button
+
+#endif
+

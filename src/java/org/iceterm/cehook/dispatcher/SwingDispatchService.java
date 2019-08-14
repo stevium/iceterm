@@ -43,6 +43,7 @@ public class SwingDispatchService extends AbstractExecutorService {
 	}
 
 	public void execute(Runnable r) {
-		SwingUtilities.invokeLater(r);
+		r.run();
+//		SwingUtilities.invokeLater(r);
 	}
 }

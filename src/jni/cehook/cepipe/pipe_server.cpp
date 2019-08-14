@@ -5,6 +5,7 @@
 #include "tchar.h"
 #include "pipe_server.h"
 #include "org_iceterm_cehook_keyboard_NativeKeyEvent.h"
+#include "org_iceterm_cehook_mouse_NativeMouseEvent.h"
 #include "../jni_Globals.h"
 
 pipe_server::pipe_server(void)
@@ -234,45 +235,57 @@ void pipe_server::OnEvent(int nEventID)
             jobject NativeInputEvent_obj = NULL;
             jint location = org_iceterm_cehook_keyboard_NativeKeyEvent_LOCATION_UNKNOWN;
 
-            NativeInputEvent_obj = (*env).NewObject(
-                    org_iceterm_cehook_keyboard_NativeKeyEvent->cls,
-                    org_iceterm_cehook_keyboard_NativeKeyEvent->init,
+            switch (event.type) {
+                case EVENT_KEY_PRESSED:
+                case EVENT_KEY_RELEASED:
+                case EVENT_KEY_TYPED:
+                {
+                    NativeInputEvent_obj = (*env).NewObject(
+                            org_iceterm_cehook_keyboard_NativeKeyEvent->cls,
+                            org_iceterm_cehook_keyboard_NativeKeyEvent->init,
+                            org_iceterm_cehook_keyboard_NativeKeyEvent_NATIVE_KEY_PRESSED,
+                            (jint) event.mask,
+                            (jint) event.data.keyboard.rawcode,
+                            (jint) event.data.keyboard.keycode,
+                            (jchar) event.data.keyboard.keychar,
+                            location);
 
-                    (jint) event.mask,
-                    (jint) event.data.keyboard.rawcode,
-                    (jint) org_iceterm_cehook_keyboard_NativeKeyEvent_VC_UNDEFINED,
-                    (jchar) event.data.keyboard.keychar,
-                    location);
-
-            // Set the private when field to the native event time.
-            (*env).SetShortField(
-                    NativeInputEvent_obj,
-                    org_iceterm_cehook_NativeInputEvent->when,
-                    (jlong)	event.time);
-
-            // Dispatch the event.
-            (*env).CallStaticVoidMethod(
-                    org_iceterm_cehook_GlobalScreen$NativeHookThread->cls,
-                    org_iceterm_cehook_GlobalScreen$NativeHookThread->dispatchEvent,
-                    NativeInputEvent_obj);
+                    break;
+                }
+                case EVENT_MOUSE_PRESSED: {
+                    NativeInputEvent_obj = (*env).NewObject(
+                            org_iceterm_cehook_mouse_NativeMouseEvent->cls,
+                            org_iceterm_cehook_mouse_NativeMouseEvent->init,
+                            org_iceterm_cehook_mouse_NativeMouseEvent_NATIVE_MOUSE_PRESSED,
+                            (jint) event.mask,
+                            (jint) event.data.mouse.x,
+                            (jint) event.data.mouse.y,
+                            (jint) event.data.mouse.clicks,
+                            (jint) event.data.mouse.button);
+                    break;
+                }
+            }
 
             if (NativeInputEvent_obj != NULL) {
-                LOG << "Message from client: " << event.data.keyboard.keychar << std::endl;
-                LOG << "Checking client data. Reserved " << event.reserved << std::endl;
-                LOG << "Checking client data. Keycode " << event.data.keyboard.keycode << std::endl;
-                LOG << "Checking client data. Rawcode " << event.data.keyboard.rawcode << std::endl;
-                LOG << "Checking client data. KeyChar " << event.data.keyboard.keychar  << std::endl;
-                LOG << "Checking client data. Mask " << event.mask << std::endl;
-                LOG << "Checking Prefix data. Reserved " << prefix_event.reserved << std::endl;
-                LOG << "Checking Prefix data. Keycode " << prefix_event.data.keyboard.keycode << std::endl;
-                LOG << "Checking Prefix data. Rawcode " << prefix_event.data.keyboard.rawcode << std::endl;
-                LOG << "Checking Prefix data. KeyChar " << prefix_event.data.keyboard.keychar  << std::endl;
-                LOG << "Checking Prefix data. Mask " << prefix_event.mask << std::endl;
+                LOG << "Message from client: "  << std::endl;
+                LOG << "client data: type " << event.type << std::endl;
+
+                // Set the private when field to the native event time.
+                (*env).SetShortField(
+                        NativeInputEvent_obj,
+                        org_iceterm_cehook_NativeInputEvent->when,
+                        (jlong)	event.time);
+
+                // Dispatch the event.
+                (*env).CallStaticVoidMethod(
+                        org_iceterm_cehook_GlobalScreen$NativeHookThread->cls,
+                        org_iceterm_cehook_GlobalScreen$NativeHookThread->dispatchEvent,
+                        NativeInputEvent_obj);
+
                 SetEvent(AU_IOREAD);
             }
 
         }
-
 
 //		if (strcmp(sData.c_str(), "close") == 0)
 //			SetEvent(AU_CLOSE);

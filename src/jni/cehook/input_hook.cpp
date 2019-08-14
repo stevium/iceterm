@@ -37,6 +37,8 @@ int prefix_mode = 0;
 
 bool is_prefix;
 
+bool from_java = 0;
+
 static bool is_prefix_key(uiohook_event event);
 
 UIOHOOK_API void hook_set_dispatch_proc(dispatcher_t dispatch_proc) {
@@ -70,6 +72,10 @@ static inline void dispatch_event(uiohook_event *const event) {
         case EVENT_KEY_TYPED:
             pClient->SetData(*event);
             pClient->SetEvent(AU_IOWRITE);
+        case EVENT_MOUSE_PRESSED:
+            pClient->SetData(*event);
+            pClient->SetEvent(AU_IOWRITE);
+            break;
 //            MessageBox(0, "EVENT_KEY_TYPED", "MessageBox caption", MB_OK);
             break;
         default:
@@ -211,7 +217,8 @@ static int process_key_pressed(int nCode, WPARAM wParam, LPARAM lParam) {
     }
 
     if (is_prefix_key(event)) {
-        prefix_mode = 1;
+        prefix_mode = 0;
+        dispatch_event(&event);
         return -1;
     }
 
@@ -317,6 +324,81 @@ UIOHOOK_API LRESULT CALLBACK keyboard_hook_event_proc(int nCode, WPARAM wParam, 
 //return 0;
 }
 
+static int process_button_pressed(int nCode, WPARAM wParam, LPARAM lParam) {
+    event.type = EVENT_MOUSE_PRESSED;
+    if(from_java){
+        from_java = !from_java;
+        return -1;
+    }
+    dispatch_event(&event);
+    return 0;
+}
+
+UIOHOOK_API LRESULT CALLBACK mouse_hook_event_proc(int nCode, WPARAM wParam, LPARAM lParam) {
+    if(!pClient) {
+        std::string sPipeName(PIPENAME);
+        pClient = new pipe_client(sPipeName);
+        Sleep(100);
+    }
+    HANDLE ph = pClient->GetPipeHandle();
+    if (ph == INVALID_HANDLE_VALUE)
+        return 0;
+
+    MOUSEHOOKSTRUCT * pMouseStruct = (MOUSEHOOKSTRUCT *)lParam;
+    if (pMouseStruct != NULL){
+        if(wParam == WM_LBUTTONDOWN)
+        {
+            hook_result = process_button_pressed(nCode, wParam, lParam);
+//            printf( "clicked" );
+        }
+//        printf("Mouse position X = %d  Mouse Position Y = %d\n", pMouseStruct->pt.x,pMouseStruct->pt.y);
+    }
+//    return CallNextHookEx(hMouseHook, nCode, wParam, lParam);
+//    if ((lParam & (1 << 30)) == 0) {
+//        hook_result = process_button_pressed(nCode, wParam, lParam);
+//    } else {
+//        process_key_released(nCode, wParam, lParam);
+//    }
+
+//    hook_result = prefix_mode;
+//    if(prefix_mode) {
+//        hook_result = -1;
+//    } else {
+//        hook_result = 0;
+//    }
+
+//	KBDLLHOOKSTRUCT *kbhook = (KBDLLHOOKSTRUCT *) lParam;
+//    process_key_pressed(nCode, wParam, lParam);
+//	switch (wParam) {
+//		case WM_KEYDOWN:
+//		case WM_SYSKEYDOWN:
+//			process_key_pressed(kbhook);
+//			break;
+//
+//		case WM_KEYUP:
+//		case WM_SYSKEYUP:
+//			process_key_released(kbhook);
+//			break;
+//
+//		default:
+//			// In theory this *should* never execute.
+//			logger(LOG_LEVEL_DEBUG,	"%s [%u]: Unhandled Windows keyboard event: %#X.\n",
+//					__FUNCTION__, __LINE__, (unsigned int) wParam);
+//			break;
+//	}
+//
+
+//	if (nCode < 0 || event.reserved ^ 0x01) {
+//		hook_result = CallNextHookEx(keyboard_event_hhook, nCode, wParam, lParam);
+//	}
+//	else {
+//		logger(LOG_LEVEL_DEBUG,	"%s [%u]: Consuming the current event. (%li)\n",
+//				__FUNCTION__, __LINE__, (long) hook_result);
+//	}
+//
+    return hook_result;
+//return 0;
+}
 // Callback function that handles events.
 void CALLBACK win_hook_event_proc(HWINEVENTHOOK hook, DWORD event, HWND hWnd, LONG idObject, LONG idChild,
                                   DWORD dwEventThread, DWORD dwmsEventTime) {

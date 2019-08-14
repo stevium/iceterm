@@ -1,8 +1,11 @@
 package org.iceterm.ceintegration;
 
 import com.sun.jna.Pointer;
+import com.sun.jna.platform.win32.Kernel32;
 import com.sun.jna.platform.win32.WinDef.HWND;
 import com.sun.jna.platform.win32.WinUser.WNDENUMPROC;
+import cucumber.api.java.vi.Cho;
+import org.iceterm.util.User32Ext;
 import org.iceterm.util.WinApi;
 import org.iceterm.util.tasks.Continuation;
 import org.iceterm.util.tasks.Task;
@@ -15,6 +18,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.EventListener;
 import java.util.List;
@@ -45,6 +49,7 @@ public class ConEmuControl extends Canvas {
     private List<StateChagedListener> stateChagedListeners = new ArrayList();
     private ConEmuSession session;
     private ConEmuStartInfo _startinfo;
+    public long parentHwnd;
 
     public ConEmuSession getSession() {
         return _running;
@@ -53,8 +58,14 @@ public class ConEmuControl extends Canvas {
     public ConEmuControl(ConEmuStartInfo startinfo)
     {
         addFocusListener(focusGained);
+//        this.setEditable(false);
+//        Toolkit tk= getToolkit();
+//        Cursor transparent = tk.createCustomCursor(tk.getImage(""), new Point(), "trans");
+//        this.setCursor(transparent);
+        this.setFocusable(true);
+        this.setEnabled(true);
+        this.setFocusTraversalKeysEnabled(true);
         this._startinfo = startinfo;
-        this.setBackground(Color.darkGray);
     }
 
     FocusAdapter focusGained = new FocusAdapter() {
@@ -66,13 +77,21 @@ public class ConEmuControl extends Canvas {
         }
     };
 
-    public void setParentHWND(long hwnd) {
+    public GuiMacroResult setParentHWND(long hwnd) {
         if(_running!= null)
-            _running.ExecuteGuiMacroTextSync("SetParentHWND " + hwnd);
+            return _running.ExecuteGuiMacroTextSync("SetParentHWND " + hwnd);
+        this.parentHwnd = hwnd;
+        return null;
+    }
+
+    public GuiMacroResult setFocus() {
+        if(_running!= null)
+            return _running.ExecuteGuiMacroTextSync("FocusConEmu");
+        return null;
     }
 
     public void resetParentHWND() {
-        GuiMacroResult guiMacroResult = _running.ExecuteGuiMacroTextSync("SetParentHWND " + Pointer.nativeValue(getHandle().getPointer()));
+        setParentHWND(Pointer.nativeValue(getHandle().getPointer()));
     }
 
     @Override
@@ -227,6 +246,17 @@ public class ConEmuControl extends Canvas {
                 this.stateChagedListeners) {
             listener.stateChanged();
         }
+    }
+
+    public void removeFocus() {
+        int appThread = Kernel32.INSTANCE.GetCurrentThreadId();
+        int foregroundThread = User32Ext.INSTANCE.GetWindowThreadProcessId(User32Ext.INSTANCE.GetForegroundWindow(), null);
+        User32Ext.INSTANCE.AttachThreadInput(foregroundThread, appThread, true);
+        User32Ext.INSTANCE.SetForegroundWindow(User32Ext.INSTANCE.GetForegroundWindow());
+        User32Ext.INSTANCE.SetFocus(User32Ext.INSTANCE.GetForegroundWindow());
+        User32Ext.INSTANCE.SetActiveWindow(User32Ext.INSTANCE.GetForegroundWindow());
+        User32Ext.INSTANCE.SwitchToThisWindow(User32Ext.INSTANCE.GetForegroundWindow(), true);
+        User32Ext.INSTANCE.AttachThreadInput(foregroundThread, appThread, false);
     }
 
     public interface StateChagedListener extends EventListener {

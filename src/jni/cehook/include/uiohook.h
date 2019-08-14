@@ -36,6 +36,12 @@ typedef enum _event_type {
 	EVENT_KEY_TYPED,
 	EVENT_KEY_PRESSED,
 	EVENT_KEY_RELEASED,
+    EVENT_MOUSE_CLICKED,
+    EVENT_MOUSE_PRESSED,
+    EVENT_MOUSE_RELEASED,
+    EVENT_MOUSE_MOVED,
+    EVENT_MOUSE_DRAGGED,
+    EVENT_MOUSE_WHEEL
 } event_type;
 
 typedef struct _screen_data {
@@ -55,6 +61,16 @@ typedef struct _keyboard_event_data {
     key_released_event_data,
     key_typed_event_data;
 
+typedef struct _mouse_event_data {
+    uint16_t button;
+    uint16_t clicks;
+    int16_t x;
+    int16_t y;
+} mouse_event_data,
+        mouse_pressed_event_data,
+        mouse_released_event_data,
+        mouse_clicked_event_data;
+
 typedef struct _uiohook_event {
 	event_type type;
 	uint64_t time;
@@ -62,6 +78,7 @@ typedef struct _uiohook_event {
 	uint16_t reserved;
 	union {
 		keyboard_event_data keyboard;
+        mouse_event_data mouse;
 	} data;
 } uiohook_event;
 
@@ -325,6 +342,21 @@ typedef void (*dispatcher_t)(uiohook_event *const);
 #define MASK_SCROLL_LOCK						1 << 15
 /* End Virtual Modifier Masks */
 
+/* Begin Virtual Mouse Buttons */
+#define MOUSE_NOBUTTON							0	// Any Button
+#define MOUSE_BUTTON1							1	// Left Button
+#define MOUSE_BUTTON2							2	// Right Button
+#define MOUSE_BUTTON3							3	// Middle Button
+#define MOUSE_BUTTON4							4	// Extra Mouse Button
+#define MOUSE_BUTTON5							5	// Extra Mouse Button
+
+#define WHEEL_UNIT_SCROLL						1
+#define WHEEL_BLOCK_SCROLL						2
+
+#define WHEEL_VERTICAL_DIRECTION				3
+#define WHEEL_HORIZONTAL_DIRECTION              4
+/* End Virtual Mouse Buttons */
+
 #ifdef _WIN32
 #define UIOHOOK_API __declspec(dllexport)
 #else
@@ -345,6 +377,8 @@ extern "C" {
 	UIOHOOK_API void hook_set_dispatch_proc(dispatcher_t dispatch_proc);
 
     UIOHOOK_API LRESULT CALLBACK keyboard_hook_event_proc(int nCode, WPARAM wParam, LPARAM lParam);
+
+    UIOHOOK_API LRESULT CALLBACK mouse_hook_event_proc(int nCode, WPARAM wParam, LPARAM lParam);
 
     UIOHOOK_API void pass_hook_handle(HHOOK keyboard_hhook);
 

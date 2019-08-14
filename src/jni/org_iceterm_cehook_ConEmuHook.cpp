@@ -11,7 +11,7 @@
 HMODULE _ceHookDll;
 HHOOK keyboard_event_hhook;
 
-DWORD runConEmuHook(DWORD ceProcessId, HWND hwnd);
+DWORD runConEmuHook(DWORD ceProcessId);
 void loadHookDll(LPCSTR libFileName, int i);
 DWORD getThreadID(DWORD pid);
 pipe_server* pServer;
@@ -41,10 +41,10 @@ void Java_org_iceterm_cehook_ConEmuHook_runPipeServer (JNIEnv *env, jclass cls) 
  * Method:    inject
  * Signature: (I)V
  */
-JNIEXPORT void JNICALL Java_org_iceterm_cehook_ConEmuHook_inject (JNIEnv *, jclass, jint nConEmuPid, jlong hwnd) {
+JNIEXPORT void JNICALL Java_org_iceterm_cehook_ConEmuHook_inject (JNIEnv *, jclass, jint nConEmuPid) {
     try {
         loadHookDll(R"(D:\stevium\iceterm\src\cmake-build-debug\cehook.dll)", (int) nConEmuPid);
-        runConEmuHook(DWORD((int) nConEmuPid), (HWND)(LONG_PTR)hwnd);
+        runConEmuHook(DWORD((int) nConEmuPid));
     }
     catch (const std::exception& e) {
         std::cout << e.what();
@@ -59,12 +59,17 @@ void loadHookDll(LPCSTR libPath, int processId) {
     }
 }
 
-DWORD runConEmuHook(DWORD ceProcessId, HWND hwnd) {
+DWORD runConEmuHook(DWORD ceProcessId) {
     DWORD ceThreadId = getThreadID(ceProcessId);
-    HOOKPROC addr = (HOOKPROC)GetProcAddress(_ceHookDll, "keyboard_hook_event_proc");
-    keyboard_event_hhook = SetWindowsHookEx(WH_KEYBOARD, addr, _ceHookDll, ceThreadId);
+    HOOKPROC keyboard_proc_addr = (HOOKPROC)GetProcAddress(_ceHookDll, "keyboard_hook_event_proc");
+    HOOKPROC mouse_proc_addr = (HOOKPROC)GetProcAddress(_ceHookDll, "mouse_hook_event_proc");
+    keyboard_event_hhook = SetWindowsHookEx(WH_KEYBOARD, keyboard_proc_addr, _ceHookDll, ceThreadId);
+    HHOOK mouse_event_hhook = SetWindowsHookEx(WH_MOUSE, mouse_proc_addr, _ceHookDll, ceThreadId);
     if (keyboard_event_hhook == NULL) {
         printf(TEXT("[-] Error: The KEYBOARD could not be hooked.\n"));
+        return(1);
+    } else if (mouse_event_hhook == NULL) {
+        printf(TEXT("[-] Error: The MOUSE could not be hooked.\n"));
         return(1);
     } else {
         printf(TEXT("[+] Program successfully hooked."));
