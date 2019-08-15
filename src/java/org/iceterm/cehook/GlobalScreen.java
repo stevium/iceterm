@@ -1,6 +1,5 @@
 package org.iceterm.cehook;
 
-// Imports.
 import org.iceterm.cehook.dispatcher.DefaultDispatchService;
 import org.iceterm.cehook.keyboard.NativeKeyEvent;
 import org.iceterm.cehook.keyboard.NativeKeyListener;
@@ -41,70 +40,6 @@ public class GlobalScreen {
 	 * The list of event listeners to notify.
 	 */
 	protected static EventListenerList eventListeners = new EventListenerList();
-
-//	static {
-//		String libName = System.getProperty("jnativehook.lib.name", "JNativeHook");
-//
-//		try {
-//			// Try to load the native library assuming the java.library.path was set correctly at launch.
-////			System.loadLibrary(libName);
-////			System.loadLibrary("iceterm");
-//		}
-//		catch (UnsatisfiedLinkError linkError) {
-//			String libLoader = System.getProperty("jnativehook.lib.locator", "org.jnativehook.DefaultLibraryLocator");
-//
-//			try {
-//				// Use the specified class to locator the native library.
-//				NativeLibraryLocator locator = Class.forName(libLoader).asSubclass(NativeLibraryLocator.class).newInstance();
-//
-//				Iterator<File> libs = locator.getLibraries();
-//				while (libs.hasNext()) {
-//					File lib = libs.next();
-//					if (lib.exists() && lib.isFile() && lib.canRead()) {
-//						System.load(lib.getPath());
-//					}
-//				}
-//			}
-//			catch (Exception e) {
-//				// There was a problem instantiating the library loader.
-//				log.severe(e.getMessage());
-//
-//				throw new UnsatisfiedLinkError(e.getMessage());
-//			}
-//		}
-//
-//		// Add some 2.0 backward comparability.
-//		Integer autoRepeatRate = GlobalScreen.getAutoRepeatRate();
-//		if (autoRepeatRate != null) {
-//			System.setProperty("jnativehook.key.repeat.rate", autoRepeatRate.toString());
-//		}
-//
-//		Integer autoRepeatDelay = GlobalScreen.getAutoRepeatDelay();
-//		if (autoRepeatDelay != null) {
-//			System.setProperty("jnativehook.key.repeat.delay", autoRepeatDelay.toString());
-//		}
-//
-//		Integer multiClickIterval = GlobalScreen.getMultiClickIterval();
-//		if (multiClickIterval != null) {
-//			System.setProperty("jnativehook.button.multiclick.iterval", multiClickIterval.toString());
-//		}
-//
-//		Integer pointerSensitivity = GlobalScreen.getPointerSensitivity();
-//		if (pointerSensitivity != null) {
-//			System.setProperty("jnativehook.pointer.sensitivity", pointerSensitivity.toString());
-//		}
-//
-//		Integer pointerAccelerationMultiplier = GlobalScreen.getPointerAccelerationMultiplier();
-//		if (pointerAccelerationMultiplier != null) {
-//			System.setProperty("jnativehook.pointer.acceleration.multiplier", pointerAccelerationMultiplier.toString());
-//		}
-//
-//
-//		Integer pointerAccelerationThreshold = GlobalScreen.getPointerAccelerationThreshold();
-//		if (pointerAccelerationThreshold != null) {
-//			System.setProperty("jnativehook.pointer.acceleration.threshold", pointerAccelerationThreshold.toString());
-//		}
-//	}
 
 	protected GlobalScreen() { }
 
@@ -229,10 +164,10 @@ public class GlobalScreen {
 //			IceTermOptionsProvider options = IceTermOptionsProvider.getInstance();
 //			GlobalScreen.postNativeEvent(new NativeKeyEvent(
 //					NativeKeyEvent.NATIVE_KEY_PRESSED,
-//					options.getPrefixKey().getModifiers(),
-//					options.getPrefixKey().getKeyCode(),
-//					options.getPrefixKey().getKeyCode(),
-//					options.getprefixkey().getkeychar()));
+//					options.getEscapeKey().getModifiers(),
+//					options.getEscapeKey().getKeyCode(),
+//					options.getEscapeKey().getKeyCode(),
+//					options.getescapekey().getkeychar()));
 
 
 

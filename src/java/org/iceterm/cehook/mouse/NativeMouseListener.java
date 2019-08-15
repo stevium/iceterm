@@ -1,7 +1,5 @@
 package org.iceterm.cehook.mouse;
 
-// Imports.
-
 import org.iceterm.cehook.GlobalScreen;
 
 import java.util.EventListener;

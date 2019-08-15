@@ -36,15 +36,12 @@ add_library(iceterm SHARED
 add_library(cehook SHARED
         jni/cehook/cepipe/pipe_client.cpp
         jni/cehook/cepipe/pipe_client.h
-#        cehook/cepipe/pipe_client_driver.cpp
         jni/cehook/logger.h
         jni/cehook/logger.cpp
         jni/cehook/input_helper.h
         jni/cehook/input_helper.cpp
         jni/cehook/input_hook.cpp
         jni/cehook/system_properties.cpp
-#        jni/cehook/post_event.cpp
-#        cehook/cepipe/pipe_server_driver.cpp
         )
 
 find_package(JNI REQUIRED)
@@ -54,5 +51,3 @@ if (JNI_FOUND)
     message (STATUS "JNI_INCLUDE_DIRS=${JNI_INCLUDE_DIRS}")
     message (STATUS "JNI_LIBRARIES=${JNI_LIBRARIES}")
 endif()
-
-#target_link_libraries(iceterm ${JNI_LIBRARIES})

@@ -1,6 +1,5 @@
 package org.iceterm.cehook.dispatcher;
 
-// Imports.
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -12,7 +11,7 @@ import java.util.concurrent.TimeUnit;
  * <p>
  *
  * @see  java.util.concurrent.ExecutorService
- * @see  org.jnativehook.GlobalScreen#setEventDispatcher
+ * @see  org.iceterm.cehook.GlobalScreen#setEventDispatcher
  */
 public class DefaultDispatchService extends ThreadPoolExecutor {
 	/**

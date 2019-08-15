@@ -33,13 +33,13 @@ static dispatcher_t dispatcher = NULL;
 
 int hook_result = 0;
 
-int prefix_mode = 0;
+int escape_mode = 0;
 
-bool is_prefix;
+bool is_escape;
 
 bool from_java = 0;
 
-static bool is_prefix_key(uiohook_event event);
+static bool is_escape_key(uiohook_event event);
 
 UIOHOOK_API void hook_set_dispatch_proc(dispatcher_t dispatch_proc) {
     logger(LOG_LEVEL_DEBUG, "%s [%u]: Setting new dispatch callback to %#p.\n",
@@ -216,31 +216,31 @@ static int process_key_pressed(int nCode, WPARAM wParam, LPARAM lParam) {
         }
     }
 
-    if (is_prefix_key(event)) {
-        prefix_mode = 0;
+    if (is_escape_key(event)) {
+        escape_mode = 0;
         dispatch_event(&event);
         return -1;
     }
 
-    if(prefix_mode) {
+    if(escape_mode) {
         // Fire key typed event.
         dispatch_event(&event);
         if(event.mask) {
             return -1;
         }
-        prefix_mode = 0;
+        escape_mode = 0;
         return -1;
     }
 
     return 0;
 }
 
-static bool is_prefix_key(uiohook_event event) {
-    is_prefix = (prefix_key != NULL)
-        && (prefix_key->mask == event.mask)
-        && (prefix_key->data.keyboard.keycode == event.data.keyboard.rawcode);
-    return is_prefix;
-//            prefix_key->data.keyboard.keychar == event.data.keyboard.keychar);
+static bool is_escape_key(uiohook_event event) {
+    is_escape = (escape_key != NULL)
+        && (escape_key->mask == event.mask)
+        && (escape_key->data.keyboard.keycode == event.data.keyboard.rawcode);
+    return is_escape;
+//            escape_key->data.keyboard.keychar == event.data.keyboard.keychar);
 }
 
 static void process_key_released(int nCode, WPARAM wParam, LPARAM lParam) {
@@ -253,8 +253,8 @@ static void process_key_released(int nCode, WPARAM wParam, LPARAM lParam) {
 //
 //    event.type = EVENT_KEY_RELEASED;
     event.mask = get_modifiers();
-    if(prefix_mode && !event.mask && !is_prefix) {
-        prefix_mode = 0;
+    if(escape_mode && !event.mask && !is_escape) {
+        escape_mode = 0;
     }
 //
 //    event.data.keyboard.keycode = keycode_to_scancode(wParam, HIWORD(lParam));
@@ -284,8 +284,8 @@ UIOHOOK_API LRESULT CALLBACK keyboard_hook_event_proc(int nCode, WPARAM wParam, 
         process_key_released(nCode, wParam, lParam);
     }
 
-//    hook_result = prefix_mode;
-//    if(prefix_mode) {
+//    hook_result = escape_mode;
+//    if(escape_mode) {
 //        hook_result = -1;
 //    } else {
 //        hook_result = 0;
@@ -360,8 +360,8 @@ UIOHOOK_API LRESULT CALLBACK mouse_hook_event_proc(int nCode, WPARAM wParam, LPA
 //        process_key_released(nCode, wParam, lParam);
 //    }
 
-//    hook_result = prefix_mode;
-//    if(prefix_mode) {
+//    hook_result = escape_mode;
+//    if(escape_mode) {
 //        hook_result = -1;
 //    } else {
 //        hook_result = 0;

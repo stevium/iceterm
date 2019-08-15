@@ -1,26 +1,30 @@
 package org.iceterm;
 
+import com.intellij.ide.DataManager;
+import com.intellij.ide.actions.ActivateToolWindowAction;
 import com.intellij.ide.actions.ToolWindowViewModeAction;
-import com.intellij.openapi.actionSystem.AnAction;
-import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.DataContext;
+import com.intellij.openapi.Disposable;
+import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.actionSystem.ex.AnActionListener;
+import com.intellij.openapi.actionSystem.impl.ActionManagerImpl;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.openapi.wm.ToolWindowType;
+import com.intellij.openapi.wm.WindowManager;
 import com.intellij.openapi.wm.ex.ToolWindowManagerListener;
 import com.intellij.openapi.wm.impl.*;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import com.intellij.ui.content.ContentManager;
 import com.intellij.util.containers.hash.HashMap;
-import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.Kernel32;
-import com.sun.jna.platform.win32.WinDef;
+import org.iceterm.cehook.AbstractSwingInputAdapter;
 import org.iceterm.cehook.ConEmuHook;
 import org.iceterm.cehook.GlobalScreen;
 import org.iceterm.cehook.dispatcher.SwingDispatchService;
+import org.iceterm.cehook.keyboard.NativeKeyEvent;
 import org.iceterm.ceintegration.ConEmuControl;
 import org.iceterm.ceintegration.ConEmuStartInfo;
 import org.iceterm.ceintegration.States;
@@ -34,15 +38,15 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.AWTEventListener;
 import java.awt.event.FocusEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.awt.peer.ComponentPeer;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Map;
 
-public class IceTermView {
+public class IceTermView implements Disposable {
 
-    private IceTermToolWindow ideaIceTermToolWindow;
+    private IceTermToolWindow iceTermToolWindowPanel;
     private Project myProject;
     private ToolWindowImpl myToolWindow;
     private ConEmuControl conEmuControl;
@@ -50,10 +54,11 @@ public class IceTermView {
     private JFrame frame;
     private WindowInfoImpl windowInfo;
     private Map<String, WindowInfoImpl> mySameDockWindows = new HashMap<>();
+    private ConEmuStartInfo startinfo;
 
     public IceTermView(@NotNull Project project) {
         myProject = project;
-        ideaIceTermToolWindow = new IceTermToolWindow();
+        iceTermToolWindowPanel = new IceTermToolWindow(project);
     }
 
     void initToolWindow(@NotNull ToolWindow toolWindow) {
@@ -91,13 +96,20 @@ public class IceTermView {
                     GlobalScreen.addNativeMouseListener(new IceTermMouseListener(conEmuControl));
                     GlobalScreen.setEventDispatcher(new SwingDispatchService());
                 }
+                if (state == States.Recycled) {
+                    ToolWindowManager windowManager = ToolWindowManager.getInstance(myProject);
+                    windowManager.invokeLater(() -> {
+                        windowManager.getToolWindow(myToolWindow.getId()).hide(null);
+                        conEmuControl.invalidateSession();
+                    });
+                }
             });
         }
     }
 
     private void createTerminalContent(ToolWindowImpl toolWindow) {
         ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
-        Content content = contentFactory.createContent(ideaIceTermToolWindow.getContent(), "", false);
+        Content content = contentFactory.createContent(iceTermToolWindowPanel.getContent(), "", false);
         final ContentManager contentManager = toolWindow.getContentManager();
         contentManager.addContent(content);
 
@@ -107,7 +119,7 @@ public class IceTermView {
     }
 
     private ConEmuControl createConEmuControl() {
-        ConEmuStartInfo startinfo = new ConEmuStartInfo();
+        this.startinfo = new ConEmuStartInfo();
         IceTermOptionsProvider myOptionsProvider = IceTermOptionsProvider.getInstance();
         IceTermProjectOptionsProvider myProjectOptionsProvider = IceTermProjectOptionsProvider.getInstance(myProject);
         startinfo.setsStartupDirectory(myProjectOptionsProvider.getStartingDirectory());
@@ -126,9 +138,9 @@ public class IceTermView {
 
         conEmuControl = new ConEmuControl(startinfo);
         conEmuControl.setMinimumSize(new Dimension(400, 400));
-        ideaIceTermToolWindow.getContent().add(conEmuControl);
-        Color background = ideaIceTermToolWindow.getContent().getParent().getBackground();
-        ideaIceTermToolWindow.getContent().setBackground(background);
+        iceTermToolWindowPanel.getContent().add(conEmuControl);
+        Color background = iceTermToolWindowPanel.getContent().getParent().getBackground();
+        iceTermToolWindowPanel.getContent().setBackground(background);
         conEmuControl.setBackground(background);
         return conEmuControl;
     }
@@ -182,7 +194,7 @@ public class IceTermView {
 
             if (event.getID() == 1005) {
                 FocusEvent focusEvent = (FocusEvent) event;
-                if (isInActiveToolWindow(focusEvent.getSource()) && !isInActiveToolWindow(focusEvent.getOppositeComponent())) {
+                if (isInToolWindow(focusEvent.getSource()) && !isInToolWindow(focusEvent.getOppositeComponent())) {
                     if (!focusEvent.isTemporary() && myToolWindow != null && (myToolWindow.isAutoHide() || myToolWindow.getType() == ToolWindowType.SLIDING)) {
                         saveTempHwnd();
                     }
@@ -191,19 +203,18 @@ public class IceTermView {
 
             if (event.getID() == 1004) {
                 FocusEvent focusEvent = (FocusEvent) event;
-                String activeToolWindowId = myToolWindow.getToolWindowManager().getActiveToolWindowId();
-                if (activeToolWindowId != null && isInActiveToolWindow(focusEvent.getSource()) && activeToolWindowId.equals(myToolWindow.getId())) {
+                if (isInToolWindow(focusEvent.getSource())) {
                     Thread t = new Thread(() -> {
                         try {
-                            Thread.sleep(100);
+                            Thread.sleep(20);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
                         if(myToolWindow.getComponent().getRootPane() == null)   {
                             return;
                         }
-                        conEmuControl.setFocus();
                         conEmuControl.getParent().requestFocus();
+                        conEmuControl.setFocus();
                     });
                     t.start();
                 }
@@ -215,7 +226,7 @@ public class IceTermView {
                 if (activeToolWindowId == null || !activeToolWindowId.equals(myToolWindow.getId())) {
                     return;
                 }
-                if(isInActiveToolWindow(mouseEvent.getComponent()))
+                if(isInToolWindow(mouseEvent.getComponent()))
                 {
                     return;
                 }
@@ -228,10 +239,9 @@ public class IceTermView {
         Toolkit.getDefaultToolkit().addAWTEventListener(internalEventLostListener, 28L);
     }
 
-    public boolean isInActiveToolWindow(Object component) {
+    public boolean isInToolWindow(Object component) {
         JComponent jsource = component instanceof JComponent ? (JComponent) component : null;
         Component source = component instanceof Component ? (Component) component : null;
-//        ToolWindow activeToolWindow = ToolWindowManager.getActiveToolWindow();
         ToolWindow activeToolWindow = this.myToolWindow;
         if (activeToolWindow == null) {
             return false;
@@ -349,4 +359,7 @@ public class IceTermView {
         return returnValue;
     }
 
+    @Override
+    public void dispose() {
+    }
 }

@@ -1,14 +1,13 @@
 package org.iceterm.cehook;
 
+import org.iceterm.cehook.keyboard.NativeKeyEvent;
+
 import java.awt.*;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
 /**
- * Adapter to convert convert native modifiers to java modifiers
- * and to provide an anchor point for native evnets.
- * The methods are empty so the super call is obsolete.
- *
- * @since 2.1
+ * Adapter to convert convert java modifiers to native
  */
 public abstract class AbstractSwingInputAdapter extends Component {
 
@@ -44,5 +43,26 @@ public abstract class AbstractSwingInputAdapter extends Component {
 		}
 
 		return modifiers;
+	}
+
+	public static int getNativeModifiers(int modifiers) {
+		int newModifiers = 0;
+		if ((modifiers & InputEvent.SHIFT_DOWN_MASK) != 0) {
+			newModifiers |= NativeKeyEvent.SHIFT_MASK;
+		}
+		if ((modifiers & InputEvent.ALT_DOWN_MASK) != 0) {
+			newModifiers |= NativeKeyEvent.ALT_MASK;
+		}
+		if ((modifiers & InputEvent.ALT_GRAPH_DOWN_MASK) != 0) {
+			newModifiers |= NativeKeyEvent.ALT_MASK;
+		}
+		if ((modifiers & InputEvent.CTRL_DOWN_MASK) != 0) {
+			newModifiers |= NativeKeyEvent.CTRL_MASK;
+		}
+		if ((modifiers & InputEvent.META_DOWN_MASK) != 0) {
+			newModifiers |= NativeKeyEvent.META_MASK;
+		}
+
+		return newModifiers;
 	}
 }

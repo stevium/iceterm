@@ -1,6 +1,6 @@
 <idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
   <id>org.jetbrains.plugins.iceterm</id>
-  <name>IdeaConEmu</name>
+  <name>IceTerm</name>
   <version>1.0</version>
   <vendor email="milos@mstevanovic.net" url="http://www.stevium.com">Stevium</vendor>
   <description><![CDATA[
@@ -17,7 +17,7 @@
   <idea-version since-build="173.0"/>
 
   <extensions defaultExtensionNs="com.intellij">
-    <toolWindow id="IdeaConEmu" secondary="true" icon="/iceterm/OpenTerminal_13x13.svg" anchor="right"
+    <toolWindow id="IceTerm" secondary="true" icon="/iceterm/OpenTerminal_13x13.svg" anchor="right"
                 factoryClass="org.iceterm.IceTermToolWindowFactory"/>
 
     <projectConfigurable groupId="tools" groupWeight="130" displayName="IceTerm" id="iceterm"

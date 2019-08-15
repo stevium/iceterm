@@ -137,11 +137,11 @@ public final class ShortcutTextField extends ExtendableTextField {
     @NotNull
     private String getPopupTooltip() {
         StringBuilder sb = new StringBuilder();
-        String prefix = "Set shortcuts with ";
+        String escape = "Set shortcuts with ";
         for (KeyStroke stroke : getKeyStrokes()) {
             if (0 == stroke.getModifiers()) {
-                sb.append(prefix).append(KeymapUtil.getKeystrokeText(stroke));
-                prefix = ", ";
+                sb.append(escape).append(KeymapUtil.getKeystrokeText(stroke));
+                escape = ", ";
             }
         }
         return sb.append(" keys").toString();

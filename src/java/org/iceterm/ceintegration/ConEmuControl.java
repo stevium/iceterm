@@ -4,7 +4,6 @@ import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.Kernel32;
 import com.sun.jna.platform.win32.WinDef.HWND;
 import com.sun.jna.platform.win32.WinUser.WNDENUMPROC;
-import cucumber.api.java.vi.Cho;
 import org.iceterm.util.User32Ext;
 import org.iceterm.util.WinApi;
 import org.iceterm.util.tasks.Continuation;
@@ -14,11 +13,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import sun.awt.windows.WComponentPeer;
 
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.EventListener;
 import java.util.List;
@@ -58,10 +55,6 @@ public class ConEmuControl extends Canvas {
     public ConEmuControl(ConEmuStartInfo startinfo)
     {
         addFocusListener(focusGained);
-//        this.setEditable(false);
-//        Toolkit tk= getToolkit();
-//        Cursor transparent = tk.createCustomCursor(tk.getImage(""), new Point(), "trans");
-//        this.setCursor(transparent);
         this.setFocusable(true);
         this.setEnabled(true);
         this.setFocusTraversalKeysEnabled(true);
@@ -72,8 +65,6 @@ public class ConEmuControl extends Canvas {
         @Override
         public void focusGained(FocusEvent e) {
             super.focusGained(e);
-//            HWND hwnd = tryGetConEmuHwnd();
-//            WinApi.SetFocus(hwnd);
         }
     };
 
@@ -95,31 +86,27 @@ public class ConEmuControl extends Canvas {
     }
 
     @Override
-    public void doLayout() {
-        super.doLayout();
-//        HWND hwnd = tryGetConEmuHwnd();
-//        WinApi.MoveWindow(hwnd, 0, 0, getWidth(), getHeight(), true);
-    }
-
-    @Override
     public void paint(Graphics g) {
         super.paint(g);
         if(session == null) {
-            session = this.Start(_startinfo);
-            session.addConsoleProcessExitedEventSink((source, event) -> {
-                JOptionPane.showMessageDialog(null, "exited");
-            });
-            session.addConsoleEmulatorClosedEventSink((source, event) -> {
-                JOptionPane.showMessageDialog(null, "closed");
-            });
+            createSession(this._startinfo);
         } else {
             this.resetParentHWND();
         }
-//        if(_running != null)
-//            return;
-//        Rectangle clipBounds = g.getClipBounds();
-//        g.setColor(Color.darkGray);
-//        g.fillRect(clipBounds.x, clipBounds.y, clipBounds.width, clipBounds.height);
+    }
+
+    public void invalidateSession() {
+        this.session = null;
+    }
+
+    public void createSession(ConEmuStartInfo startinfo) {
+        session = this.Start(startinfo);
+        session.addConsoleProcessExitedEventSink((source, event) -> {
+            stateChanged();
+        });
+        session.addConsoleEmulatorClosedEventSink((source, event) -> {
+            stateChanged();
+        });
     }
 
     public ConEmuStartInfo getAutoStartInfo()

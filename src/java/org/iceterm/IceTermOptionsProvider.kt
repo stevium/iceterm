@@ -39,24 +39,24 @@ class IceTermOptionsProvider : PersistentStateComponent<IceTermOptionsProvider.S
         myState.myShellTask = task
     }
 
-    var prefixKey: KeyStroke
-        get() = if (myState.myPrefixKey != null) {
+    var escapeKey: KeyStroke
+        get() = if (myState.myEscapeKey != null) {
             try {
-                KeyStroke.getKeyStroke(myState.myPrefixKey)
+                KeyStroke.getKeyStroke(myState.myEscapeKey)
             } catch (e: Exception) {
-                defaultPrefixKey()
+                defaultEscapeKey()
             }
         }else {
-            defaultPrefixKey()
+            defaultEscapeKey()
         }
-        set(prefixKey) {
-            myState.myPrefixKey = prefixKey.toString()
+        set(escapeKey) {
+            myState.myEscapeKey = escapeKey.toString()
         }
 
     class State {
         var myConEmuPath: String? = null
         var myShellTask: String? = null
-        var myPrefixKey: String? = null
+        var myEscapeKey: String? = null
         @get:Property(surroundWithTag = false, flat = true)
         var envDataOptions = EnvironmentVariablesDataOptions()
     }
@@ -92,8 +92,8 @@ class IceTermOptionsProvider : PersistentStateComponent<IceTermOptionsProvider.S
         return defaultStartInfo.getConsoleProcessCommandLine();
     }
 
-    fun defaultPrefixKey(): KeyStroke {
-        return KeyStroke.getKeyStroke("control SPACE")
+    fun defaultEscapeKey(): KeyStroke {
+        return KeyStroke.getKeyStroke("ESCAPE")
     }
 
     companion object {

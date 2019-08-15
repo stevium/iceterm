@@ -1,6 +1,6 @@
 <idea-plugin>
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow id="IdeaConEmu" secondary="true" icon="/iceterm/plus.png" anchor="right"
+        <toolWindow id="IceTerm" secondary="true" icon="/iceterm/plus.png" anchor="right"
                     factoryClass="org.iceterm.IceTermToolWindowFactory"/>
 
         <!--<projectConfigurable groupId="tools" groupWeight="130" displayName="Terminal" id="terminal"-->

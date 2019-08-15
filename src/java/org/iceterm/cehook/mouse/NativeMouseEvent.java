@@ -1,7 +1,5 @@
 package org.iceterm.cehook.mouse;
 
-// Imports.
-
 import org.iceterm.cehook.GlobalScreen;
 import org.iceterm.cehook.NativeInputEvent;
 
@@ -257,66 +255,5 @@ public class NativeMouseEvent extends NativeInputEvent {
 	 */
 	public int getY() {
 		return y;
-	}
-
-	/**
-	 * Returns a parameter string identifying the native event.
-	 * This method is useful for event-logging and debugging.
-	 *
-	 * @return a string identifying the native event and its attributes.
-	 */
-	@Override
-	public String paramString() {
-		StringBuilder param = new StringBuilder(255);
-
-		switch(getID()) {
-			case NATIVE_MOUSE_CLICKED:
-				 param.append("NATIVE_MOUSE_CLICKED");
-				break;
-
-			case NATIVE_MOUSE_PRESSED:
-				 param.append("NATIVE_MOUSE_PRESSED");
-				break;
-
-			case NATIVE_MOUSE_RELEASED:
-				param.append("NATIVE_MOUSE_RELEASED");
-				break;
-
-			case NATIVE_MOUSE_MOVED:
-				param.append("NATIVE_MOUSE_MOVED");
-				break;
-
-			case NATIVE_MOUSE_DRAGGED:
-				param.append("NATIVE_MOUSE_DRAGGED");
-				break;
-
-			case NATIVE_MOUSE_WHEEL:
-				param.append("NATIVE_MOUSE_WHEEL");
-				break;
-
-			default:
-				param.append("unknown type");
-				break;
-		}
-
-		param.append(",(");
-		param.append(x);
-		param.append(',');
-		param.append(y);
-		param.append("),");
-
-
-		param.append("button=");
-		param.append(button);
-
-		if (getModifiers() != 0) {
-			param.append(",modifiers=");
-			param.append(getModifiersText(getModifiers()));
-		}
-
-		param.append(",clickCount=");
-		param.append(getClickCount());
-
-		return param.toString();
 	}
 }

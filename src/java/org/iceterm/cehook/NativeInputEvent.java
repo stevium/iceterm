@@ -1,8 +1,5 @@
 package org.iceterm.cehook;
 
-// Imports.
-
-import java.awt.*;
 import java.util.EventObject;
 
 /**
@@ -26,12 +23,7 @@ public class NativeInputEvent extends EventObject {
 	/** The modifier keys down during event. */
 	private int modifiers;
 	
-	/** Mask for undocumented behavior.
-	 * More information available at:
-	 * <a href="https://github.com/kwhat/jnativehook/wiki/Usage#consuming-events-unsupported">wiki/Usage#consuming-events-unsupported</a>
-	 * @since 2.0
-	 */
-	@SuppressWarnings("unused")
+	/** Mask for undocumented behavior. */
 	private short reserved;
 
 	/** The left shift key modifier constant.
@@ -183,116 +175,7 @@ public class NativeInputEvent extends EventObject {
 	 * @since 1.1
 	 */
 	@SuppressWarnings("unused")
-	private void setReserved(short reserved) {
+	public void setReserved(short reserved) {
 		this.reserved = reserved;
-	}
-	
-	/**
-	 * Gets a <code>String</code> describing the modifier flags, such as
-	 * "Button1", or "Ctrl+Alt". These strings can be localized by changing the
-	 * awt.properties file.
-	 *
-	 * @param modifiers a modifier mask describing the modifier keys and mouse
-	 * buttons of an event.
-	 * @return the modifier mask's textual representation.
-	 */
-	public static String getModifiersText(int modifiers) {
-		StringBuilder param = new StringBuilder(255);
-
-		if ((modifiers & NativeInputEvent.SHIFT_MASK) != 0) {
-			param.append(Toolkit.getProperty("AWT.shift", "Shift"));
-			param.append('+');
-		}
-
-		if ((modifiers & NativeInputEvent.CTRL_MASK) != 0) {
-			param.append(Toolkit.getProperty("AWT.control", "Ctrl"));
-			param.append('+');
-		}
-
-		if ((modifiers & NativeInputEvent.META_MASK) != 0) {
-			param.append(Toolkit.getProperty("AWT.meta", "Meta"));
-			param.append('+');
-		}
-
-		if ((modifiers & NativeInputEvent.ALT_MASK) != 0) {
-			param.append(Toolkit.getProperty("AWT.alt", "Alt"));
-			param.append('+');
-		}
-
-
-		if ((modifiers & NativeInputEvent.BUTTON1_MASK) != 0) {
-			param.append(Toolkit.getProperty("AWT.button1", "Button1"));
-			param.append('+');
-		}
-
-		if ((modifiers & NativeInputEvent.BUTTON2_MASK) != 0) {
-			param.append(Toolkit.getProperty("AWT.button2", "Button2"));
-			param.append('+');
-		}
-
-		if ((modifiers & NativeInputEvent.BUTTON3_MASK) != 0) {
-			param.append(Toolkit.getProperty("AWT.button3", "Button3"));
-			param.append('+');
-		}
-
-		if ((modifiers & NativeInputEvent.BUTTON4_MASK) != 0) {
-			param.append(Toolkit.getProperty("AWT.button4", "Button4"));
-			param.append('+');
-		}
-
-		if ((modifiers & NativeInputEvent.BUTTON5_MASK) != 0) {
-			param.append(Toolkit.getProperty("AWT.button5", "Button5"));
-			param.append('+');
-		}
-
-
-		if ((modifiers & NativeInputEvent.NUM_LOCK_MASK) != 0) {
-			param.append(Toolkit.getProperty("AWT.numLock", "Num Lock"));
-			param.append('+');
-		}
-
-		if ((modifiers & NativeInputEvent.CAPS_LOCK_MASK) != 0) {
-			param.append(Toolkit.getProperty("AWT.capsLock", "Caps Lock"));
-			param.append('+');
-		}
-
-		if ((modifiers & NativeInputEvent.SCROLL_LOCK_MASK) != 0) {
-			param.append(Toolkit.getProperty("AWT.scrollLock", "Scroll Lock"));
-			param.append('+');
-		}
-
-		if (param.length() > 0) {
-			// Remove the trailing '+'.
-			param.deleteCharAt(param.length() - 1);
-		}
-
-		return param.toString();
-	}
-
-	/**
-	 * Gets a <code>String</code> representation of this event. This method is
-	 * useful for event-logging and debugging.
-	 *
-	 * @return a string identifying the event and its attributes
-	 */
-	public String paramString() {
-		StringBuilder param = new StringBuilder(255);
-
-		param.append("id=");
-		param.append(getID());
-		param.append(',');
-
-		param.append("when=");
-		param.append(getWhen());
-		param.append(',');
-
-		param.append("mask=");
-		param.append(Integer.toBinaryString(getModifiers()));
-		param.append(',');
-
-		param.append("modifiers=");
-		param.append(getModifiersText(getModifiers()));
-
-		return param.toString();
 	}
 }

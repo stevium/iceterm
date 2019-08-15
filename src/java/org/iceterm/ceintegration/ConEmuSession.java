@@ -205,10 +205,7 @@ public class ConEmuSession {
     public void closeConsoleEmulator() {
         try {
             if (process.isAlive())
-                beginGuiMacro("Close")
-                        .withParam(1 /*terminate active process*/)
-                        .withParam(1 /*without confirmation*/)
-                        .executeSync();
+                ExecuteGuiMacroTextSync("Close");
             if (process.isAlive())
                 process.destroy();
         } catch (Exception e) {
@@ -278,7 +275,7 @@ public class ConEmuSession {
     @NotNull
     public Task<Boolean> killConsoleProcessAsync() {
         try {
-            if (process.isAlive() && nConsoleProcessExitCode == null) {
+            if (process.isAlive()) {
                 return GetInfoRoot.queryAsync(this).continueWith(task -> {
                     GetInfoRoot rootInfo = task.getResult();
                     if (rootInfo.pid == null)
@@ -788,7 +785,7 @@ public class ConEmuSession {
                     consoleEmulatorClosed(this, null);
                 }
             });
-//            processExitDetector.start();
+            processExitDetector.start();
             return processNew;
         } catch (Exception ex) {
             terminateLifetime();

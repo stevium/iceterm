@@ -131,8 +131,8 @@ UINT32 __stdcall pipe_server::PipeThreadProc(void* pParam)
         if(nEventID == AU_ERROR || nEventID == AU_TERMINATE)
         {
             // Close pipe comm
-            MessageBox(0, "Closing server", "pipe_server", MB_OK);
-//            pPipe->Close();
+//            MessageBox(0, "Closing server", "pipe_server", MB_OK);
+            pPipe->Close();
             break;
         }
 
@@ -218,9 +218,9 @@ void pipe_server::OnEvent(int nEventID)
 //        uiohook_event event;
 //        event.data.keyboard.keychar = 109;
 
-        LOG << "Client connected. Sending reserved: " << prefix_event.reserved << std::endl;
-        LOG << "Client connected. Sending mask: " << prefix_event.mask << std::endl;
-        SetData(prefix_event);
+        LOG << "Client connected. Sending reserved: " << escape_event.reserved << std::endl;
+        LOG << "Client connected. Sending mask: " << escape_event.mask << std::endl;
+        SetData(escape_event);
         SetEvent(AU_IOWRITE);
         break;
         }
@@ -403,11 +403,11 @@ bool pipe_server::Write()
     return true;
 }
 
-void pipe_server::SetPrefixData(uiohook_event prefix) {
-    LOG << "Setting Prefix data. Reserved " << prefix.reserved << std::endl;
-    LOG << "Setting Prefix data. Keycode " << prefix.data.keyboard.keycode << std::endl;
-    LOG << "Setting Prefix data. Rawcode " << prefix.data.keyboard.rawcode << std::endl;
-    LOG << "Setting Prefix data. KeyChar " << prefix.data.keyboard.keychar  << std::endl;
-    LOG << "Setting Prefix data. Modifiers " << prefix.mask << std::endl;
-    prefix_event = prefix;
+void pipe_server::SetEscapeData(uiohook_event escape) {
+    LOG << "Setting Escape data. Reserved " << escape.reserved << std::endl;
+    LOG << "Setting Escape data. Keycode " << escape.data.keyboard.keycode << std::endl;
+    LOG << "Setting Escape data. Rawcode " << escape.data.keyboard.rawcode << std::endl;
+    LOG << "Setting Escape data. KeyChar " << escape.data.keyboard.keychar  << std::endl;
+    LOG << "Setting Escape data. Modifiers " << escape.mask << std::endl;
+    escape_event = escape;
 }

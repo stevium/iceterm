@@ -61,7 +61,7 @@
                 </constraints>
                 <properties>
                   <horizontalTextPosition value="2"/>
-                  <text value="Prefix Key"/>
+                  <text value="Escape Key"/>
                 </properties>
               </component>
               <component id="d836a" class="javax.swing.JLabel">
@@ -98,7 +98,7 @@
                   <text value=""/>
                 </properties>
               </component>
-              <component id="6d7d7" class="org.iceterm.ShortcutTextField" binding="myPrefixKeyField" custom-create="true">
+              <component id="6d7d7" class="org.iceterm.ShortcutTextField" binding="myEscapeKeyField" custom-create="true">
                 <constraints>
                   <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>

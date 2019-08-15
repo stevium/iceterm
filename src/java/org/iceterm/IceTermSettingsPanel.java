@@ -32,7 +32,7 @@ public class IceTermSettingsPanel {
     private TextFieldWithBrowseButton myConEmuPathField;
     private JPanel myWholePanel;
     private JTextField myShellTaskField;
-    private ShortcutTextField myPrefixKeyField;
+    private ShortcutTextField myEscapeKeyField;
 
     private IceTermOptionsProvider myOptionsProvider;
     private IceTermProjectOptionsProvider myProjectOptionsProvider;
@@ -42,7 +42,6 @@ public class IceTermSettingsPanel {
     public JComponent createPanel(@NotNull IceTermOptionsProvider provider, @NotNull IceTermProjectOptionsProvider projectOptionsProvider) {
         myOptionsProvider = provider;
         myProjectOptionsProvider = projectOptionsProvider;
-//        com.intellij.openapi.keymap.impl.ui.KeymapPanel
         myProjectSettingsPanel.setBorder(IdeBorderFactory.createTitledBorder("Project settings"));
         myGlobalSettingsPanel.setBorder(IdeBorderFactory.createTitledBorder("Application settings"));
 
@@ -92,11 +91,11 @@ public class IceTermSettingsPanel {
             }
         });
 
-       myPrefixKeyField.getDocument().addDocumentListener(new DocumentAdapter() {
+       myEscapeKeyField.getDocument().addDocumentListener(new DocumentAdapter() {
             @Override
             protected void textChanged(@NotNull DocumentEvent e) {
-                myPrefixKeyField
-                        .setForeground(myOptionsProvider.defaultPrefixKey().equals(myPrefixKeyField.getKeyStroke()) ?
+                myEscapeKeyField
+                        .setForeground(myOptionsProvider.defaultEscapeKey().equals(myEscapeKeyField.getKeyStroke()) ?
                         getDefaultValueColor() : getChangedValueColor());
             }
         });
@@ -107,7 +106,7 @@ public class IceTermSettingsPanel {
     public boolean isModified() {
         return !Comparing.equal(myConEmuPathField.getText(), myOptionsProvider.getConEmuPath())
                 || !Comparing.equal(myStartDirectoryField.getText(), StringUtil.notNullize(myProjectOptionsProvider.getStartingDirectory()))
-                || !myOptionsProvider.getPrefixKey().equals(myPrefixKeyField.getKeyStroke())
+                || !myOptionsProvider.getEscapeKey().equals(myEscapeKeyField.getKeyStroke())
                 || !Comparing.equal(myShellTaskField.getText(), myOptionsProvider.getShellTask())
                 || myConfigurables.stream().anyMatch(c -> c.isModified());
     }
@@ -115,7 +114,7 @@ public class IceTermSettingsPanel {
     public void apply() {
         myProjectOptionsProvider.setStartingDirectory(myStartDirectoryField.getText());
         myOptionsProvider.setConEmuPath(myConEmuPathField.getText());
-        myOptionsProvider.setPrefixKey(myPrefixKeyField.getKeyStroke());
+        myOptionsProvider.setEscapeKey(myEscapeKeyField.getKeyStroke());
         myOptionsProvider.setShellTask(myShellTaskField.getText());
         myConfigurables.forEach(c -> {
             try {
@@ -130,7 +129,7 @@ public class IceTermSettingsPanel {
     public void reset() {
         myConEmuPathField.setText(myOptionsProvider.getConEmuPath());
         myStartDirectoryField.setText(myProjectOptionsProvider.getStartingDirectory());
-        myPrefixKeyField.setKeyStroke(myOptionsProvider.getPrefixKey());
+        myEscapeKeyField.setKeyStroke(myOptionsProvider.getEscapeKey());
         myShellTaskField.setText(myOptionsProvider.getShellTask());
         myConfigurables.forEach(c -> c.reset());
     }
@@ -157,6 +156,6 @@ public class IceTermSettingsPanel {
     }
 
     private void createUIComponents() {
-        myPrefixKeyField =  new ShortcutTextField(true);
+        myEscapeKeyField =  new ShortcutTextField(true);
     }
 }

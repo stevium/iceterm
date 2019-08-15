@@ -1,8 +1,5 @@
 package org.iceterm.cehook.dispatcher;
 
-// Imports.
-
-import javax.swing.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.AbstractExecutorService;
@@ -15,7 +12,7 @@ import java.util.concurrent.TimeUnit;
  * @see  java.util.concurrent.ExecutorService
  */
 public class SwingDispatchService extends AbstractExecutorService {
-	private boolean running = false;
+	private boolean running;
 
 	public SwingDispatchService() {
 		running = true;
@@ -27,7 +24,7 @@ public class SwingDispatchService extends AbstractExecutorService {
 
 	public List<Runnable> shutdownNow() {
 		running = false;
-		return new ArrayList<Runnable>(0);
+		return new ArrayList<>(0);
 	}
 
 	public boolean isShutdown() {

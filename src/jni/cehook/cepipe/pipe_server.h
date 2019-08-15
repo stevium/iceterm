@@ -104,7 +104,7 @@ public:
      */
     void Run();
 
-    void SetPrefixData(uiohook_event prefix);
+    void SetEscapeData(uiohook_event escape);
 
 private:
 
@@ -127,7 +127,7 @@ private:
     int    m_nEvent;                // Pipe event
     char* m_buffer;              // Buffer to hold data
 
-    uiohook_event prefix_event;
+    uiohook_event escape_event;
 };
 
 extern pipe_server* pServer;

@@ -2,7 +2,7 @@
 #include "process.h"
 #include "pipe_client.h"
 
-uiohook_event *prefix_key = NULL;
+uiohook_event *escape_key = NULL;
 
 pipe_client::pipe_client(void)
 {
@@ -223,12 +223,12 @@ void pipe_client::OnEvent(int nEventID)
         //SetData(sData);
 
         if(sData.reserved == 0x01) {
-            prefix_key = new uiohook_event;
-            prefix_key->data = sData.data;
-            prefix_key->type = sData.type;
-            prefix_key->time = sData.time;
-            prefix_key->mask = sData.mask;
-            prefix_key->reserved = sData.reserved;
+            escape_key = new uiohook_event;
+            escape_key->data = sData.data;
+            escape_key->type = sData.type;
+            escape_key->time = sData.time;
+            escape_key->mask = sData.mask;
+            escape_key->reserved = sData.reserved;
         }
         SetEvent(AU_IOPENDING);
         break;

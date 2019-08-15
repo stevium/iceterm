@@ -13,7 +13,7 @@
 #include <uiohook.h>
 #include "pipe_const.h"
 
-extern uiohook_event *prefix_key;
+extern uiohook_event *escape_key;
 
 class pipe_client
 {
