@@ -1,6 +1,9 @@
 package org.iceterm.ceintegration;
 
+import com.intellij.openapi.project.Project;
 import org.apache.commons.lang.NullArgumentException;
+import org.iceterm.IceTermOptionsProvider;
+import org.iceterm.IceTermProjectOptionsProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
@@ -38,6 +41,7 @@ public class ConEmuStartInfo {
     private boolean isEchoingConsoleCommandLine;
 
     private boolean isElevated;
+    private Project myProject;
 
     public enum LogLevels {
         /**
@@ -92,12 +96,36 @@ public class ConEmuStartInfo {
         setConEmuExecutablePath(InitConEmuLocation());
     }
 
-    public ConEmuStartInfo(@NotNull String sConsoleProcessCommandLine) {
+    public ConEmuStartInfo(Project myProject) {
         this();
+        this.myProject = myProject;
+        updateFromSettings();
+    }
+
+    public ConEmuStartInfo(@NotNull String sConsoleProcessCommandLine, Project myProject) {
+        this(myProject);
         if (sConsoleProcessCommandLine == null)
             throw new NullArgumentException("sConsoleProcessCommandLine");
 
         setConsoleProcessCommandLine(sConsoleProcessCommandLine);
+    }
+
+    private void updateFromSettings() {
+        IceTermOptionsProvider myOptionsProvider = IceTermOptionsProvider.getInstance();
+        IceTermProjectOptionsProvider myProjectOptionsProvider = IceTermProjectOptionsProvider.getInstance(myProject);
+        this.setsStartupDirectory(myProjectOptionsProvider.getStartingDirectory());
+        this.setConsoleProcessCommandLine(myOptionsProvider.getShellTask());
+        this.setConEmuExecutablePath(myOptionsProvider.defaultConEmuPath());
+        this.setLogLevel(ConEmuStartInfo.LogLevels.Basic);
+
+//        startinfo.setConEmuExecutablePath(conEmuExe);
+
+//        startinfo.setConEmuConsoleServerExecutablePath(conEmuCD);
+//        startinfo.setConsoleProcessCommandLine("{Shells::PowerShell}");
+//        StringBuilder sbText = new StringBuilder();
+//        startinfo.setAnsiStreamChunkReceivedEventSink((source, event) -> {
+//            sbText.append(event.GetMbcsText());
+//        });
     }
 
     @Nullable

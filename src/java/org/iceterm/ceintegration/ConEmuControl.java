@@ -99,6 +99,10 @@ public class ConEmuControl extends Canvas {
         this.session = null;
     }
 
+    public void setStartInfo(ConEmuStartInfo _startinfo) {
+        this._startinfo = _startinfo;
+    }
+
     public void createSession(ConEmuStartInfo startinfo) {
         session = this.Start(startinfo);
         session.addConsoleProcessExitedEventSink((source, event) -> {

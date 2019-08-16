@@ -1,44 +1,35 @@
 package org.iceterm;
 
-import com.intellij.ide.DataManager;
-import com.intellij.ide.actions.ActivateToolWindowAction;
 import com.intellij.ide.actions.ToolWindowViewModeAction;
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.actionSystem.*;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.actionSystem.ex.AnActionListener;
-import com.intellij.openapi.actionSystem.impl.ActionManagerImpl;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.openapi.wm.ToolWindowType;
-import com.intellij.openapi.wm.WindowManager;
 import com.intellij.openapi.wm.ex.ToolWindowManagerListener;
 import com.intellij.openapi.wm.impl.*;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import com.intellij.ui.content.ContentManager;
 import com.intellij.util.containers.hash.HashMap;
-import com.sun.jna.platform.win32.Kernel32;
-import org.iceterm.cehook.AbstractSwingInputAdapter;
 import org.iceterm.cehook.ConEmuHook;
 import org.iceterm.cehook.GlobalScreen;
 import org.iceterm.cehook.dispatcher.SwingDispatchService;
-import org.iceterm.cehook.keyboard.NativeKeyEvent;
 import org.iceterm.ceintegration.ConEmuControl;
 import org.iceterm.ceintegration.ConEmuStartInfo;
 import org.iceterm.ceintegration.States;
-import org.iceterm.util.User32Ext;
 import org.iceterm.util.WinApi;
 import org.jetbrains.annotations.NotNull;
 import sun.awt.windows.WComponentPeer;
-import sun.awt.windows.WWindowPeer;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.AWTEventListener;
 import java.awt.event.FocusEvent;
-import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -99,6 +90,7 @@ public class IceTermView implements Disposable {
                     windowManager.invokeLater(() -> {
                         windowManager.getToolWindow(myToolWindow.getId()).hide(null);
                         conEmuControl.invalidateSession();
+                        conEmuControl.setStartInfo(new ConEmuStartInfo(myProject));
                     });
                 }
             });
@@ -117,22 +109,7 @@ public class IceTermView implements Disposable {
     }
 
     private ConEmuControl createConEmuControl() {
-        this.startinfo = new ConEmuStartInfo();
-        IceTermOptionsProvider myOptionsProvider = IceTermOptionsProvider.getInstance();
-        IceTermProjectOptionsProvider myProjectOptionsProvider = IceTermProjectOptionsProvider.getInstance(myProject);
-        startinfo.setsStartupDirectory(myProjectOptionsProvider.getStartingDirectory());
-        startinfo.setConsoleProcessCommandLine(myOptionsProvider.getShellTask());
-        startinfo.setConEmuExecutablePath(myOptionsProvider.defaultConEmuPath());
-
-//        startinfo.setConEmuExecutablePath(conEmuExe);
-
-//        startinfo.setConEmuConsoleServerExecutablePath(conEmuCD);
-//        startinfo.setConsoleProcessCommandLine("{Shells::PowerShell}");
-        startinfo.setLogLevel(ConEmuStartInfo.LogLevels.Basic);
-//        StringBuilder sbText = new StringBuilder();
-//        startinfo.setAnsiStreamChunkReceivedEventSink((source, event) -> {
-//            sbText.append(event.GetMbcsText());
-//        });
+        this.startinfo = new ConEmuStartInfo(myProject);
 
         conEmuControl = new ConEmuControl(startinfo);
         conEmuControl.setMinimumSize(new Dimension(400, 400));
