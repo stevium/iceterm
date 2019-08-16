@@ -30,7 +30,7 @@ JNIEXPORT void JNICALL Java_org_iceterm_cehook_ConEmuHook_runPipeServer
  * Signature: (IJ)V
  */
 JNIEXPORT void JNICALL Java_org_iceterm_cehook_ConEmuHook_inject
-  (JNIEnv *, jclass, jint);
+        (JNIEnv *, jclass, jint, jstring);
 
 #ifdef __cplusplus
 }

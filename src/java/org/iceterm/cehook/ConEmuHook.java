@@ -2,13 +2,18 @@ package org.iceterm.cehook;
 
 import org.iceterm.IceTermOptionsProvider;
 import org.iceterm.cehook.keyboard.NativeKeyEvent;
+import org.iceterm.ceintegration.ConEmuStartInfo;
 
 public class ConEmuHook {
     static {
-        System.loadLibrary("iceterm");
+        try {
+            System.load(ConEmuStartInfo.getIcetermLibPath());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    public void run(int conEmuPid, long wHwnd, int ideaPid) {
+    public void run(int conEmuPid) {
         try {
             createPipeServer();
             IceTermOptionsProvider options = IceTermOptionsProvider.getInstance();
@@ -28,7 +33,7 @@ public class ConEmuHook {
                 }
             });
             serverThread.start();
-            inject(conEmuPid, wHwnd, ideaPid);
+            inject(conEmuPid, new ConEmuStartInfo().getCeHookLibPath());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -36,5 +41,5 @@ public class ConEmuHook {
 
     private static native void createPipeServer();
     private static native void runPipeServer();
-    private static native void inject(int nConEmuPid, long wHwnd, int ideaPid);
+    private static native void inject(int nConEmuPid, String libPath);
 }

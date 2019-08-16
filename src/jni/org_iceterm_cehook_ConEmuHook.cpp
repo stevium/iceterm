@@ -41,9 +41,10 @@ void Java_org_iceterm_cehook_ConEmuHook_runPipeServer (JNIEnv *env, jclass cls) 
  * Method:    inject
  * Signature: (I)V
  */
-JNIEXPORT void JNICALL Java_org_iceterm_cehook_ConEmuHook_inject (JNIEnv *, jclass, jint nConEmuPid) {
+JNIEXPORT void JNICALL Java_org_iceterm_cehook_ConEmuHook_inject (JNIEnv *env, jclass, jint nConEmuPid,  jstring jsPath) {
     try {
-        loadHookDll(R"(D:\stevium\iceterm\src\cmake-build-debug\cehook.dll)", (int) nConEmuPid);
+        std::string path = env->GetStringUTFChars(jsPath, 0);
+        loadHookDll(path.c_str(), (int) nConEmuPid);
         runConEmuHook(DWORD((int) nConEmuPid));
     }
     catch (const std::exception& e) {

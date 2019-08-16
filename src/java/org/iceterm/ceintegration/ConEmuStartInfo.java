@@ -401,8 +401,15 @@ public class ConEmuStartInfo {
         return "";
     }
 
+    public static String getIcetermLibPath() throws Exception {
+        return new File(getContainingFolder(ConEmuStartInfo.class),"native\\iceterm.dll").getAbsolutePath();
+    }
 
-    private String getContainingFolder(Class aclass) throws Exception {
+    public static String getCeHookLibPath() throws Exception {
+        return new File(getContainingFolder(ConEmuStartInfo.class),"native\\cehook.dll").getAbsolutePath();
+    }
+
+    private static String getContainingFolder(Class aclass) throws Exception {
         CodeSource codeSource = aclass.getProtectionDomain().getCodeSource();
 
         File jarFile;

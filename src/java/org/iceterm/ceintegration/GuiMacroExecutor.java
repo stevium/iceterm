@@ -11,13 +11,18 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.IOException;
 
+
 /**
  * <p>Implements calling GuiMacro to the remote ConEmu instance, and getting the result.</p>
  * <p>Got switching implementation for out-of-process (classic, via a console tool) and in-process (new feature which loads the helper comm DLL directly) access.</p>
  */
 public class GuiMacroExecutor implements AutoCloseable {
     static {
-        System.loadLibrary("iceterm");
+        try {
+            System.load(ConEmuStartInfo.getIcetermLibPath());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /*

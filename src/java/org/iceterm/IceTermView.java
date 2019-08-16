@@ -89,9 +89,7 @@ public class IceTermView implements Disposable {
                     Process process = conEmuControl.getSession().getProcess();
                     ConEmuHook hook = new ConEmuHook();
                     System.out.println("Setting up native hook hook");
-                    Window frame = IdeFrameImpl.getWindows()[2];
-                    long lHwnd = ((WWindowPeer) frame.getPeer()).getHWnd();
-                    hook.run(WinApi.Helpers.getProcessId(process), lHwnd, Kernel32.INSTANCE.GetCurrentProcessId());
+                    hook.run(WinApi.Helpers.getProcessId(process));
                     GlobalScreen.addNativeKeyListener(new IceTermKeyListener(conEmuControl));
                     GlobalScreen.addNativeMouseListener(new IceTermMouseListener(conEmuControl));
                     GlobalScreen.setEventDispatcher(new SwingDispatchService());
