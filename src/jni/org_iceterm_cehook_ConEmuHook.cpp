@@ -21,7 +21,7 @@ pipe_server* pServer;
  * Method:    runPipeServer
  * Signature: ()V
  */
-void Java_org_iceterm_cehook_ConEmuHook_createPipeServer (JNIEnv *env, jclass cls) {
+JNIEXPORT void JNICALL Java_org_iceterm_cehook_ConEmuHook_createPipeServer (JNIEnv *env, jclass cls) {
     std::string sPipeName(PIPENAME);
     pServer = new pipe_server(sPipeName, env, cls);
 }
@@ -31,7 +31,7 @@ void Java_org_iceterm_cehook_ConEmuHook_createPipeServer (JNIEnv *env, jclass cl
  * Method:    runPipeServer
  * Signature: ()V
  */
-void Java_org_iceterm_cehook_ConEmuHook_runPipeServer (JNIEnv *env, jclass cls) {
+JNIEXPORT void JNICALL Java_org_iceterm_cehook_ConEmuHook_runPipeServer (JNIEnv *env, jclass cls) {
     pServer->Run();
 //    ::WaitForSingleObject(pServer->GetThreadHandle(), INFINITE);
 }
