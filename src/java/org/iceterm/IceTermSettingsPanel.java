@@ -18,16 +18,11 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import java.awt.*;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.util.Arrays;
-
-import static com.intellij.util.ui.JBUI.addPropertyChangeListener;
 
 public class IceTermSettingsPanel {
     private JPanel myProjectSettingsPanel;
     private TextFieldWithBrowseButton myStartDirectoryField;
-    private EnvironmentVariablesTextFieldWithBrowseButton myEnvVarField;
     private JPanel myGlobalSettingsPanel;
     private TextFieldWithBrowseButton myConEmuPathField;
     private JPanel myWholePanel;

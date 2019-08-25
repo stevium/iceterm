@@ -32,12 +32,8 @@ static uiohook_event event;
 static dispatcher_t dispatcher = NULL;
 
 int hook_result = 0;
-
 int escape_mode = 0;
-
 bool is_escape;
-
-bool from_java = 0;
 
 static bool is_escape_key(uiohook_event event);
 
@@ -50,11 +46,6 @@ UIOHOOK_API void hook_set_dispatch_proc(dispatcher_t dispatch_proc) {
 
 // Send out an event if a dispatcher was set.
 static inline void dispatch_event(uiohook_event *const event) {
-//    const char * mask = "mask " + event->mask;
-//    const char * time = " time " + event->time;
-//    const char * keychar = " data->keychar " + event->data.keyboard.keychar;
-//    const char * keycode = " data->keycode " + event->data.keyboard.keycode;
-//    const char * rawcode = " data->rawcode " + event->data.keyboard.rawcode;
     switch (event->type) {
         case EVENT_HOOK_DISABLED:
 //            MessageBox(0, "EVENT_HOOK_DISABLED", "MessageBox caption", MB_OK);
@@ -81,16 +72,6 @@ static inline void dispatch_event(uiohook_event *const event) {
         default:
             break;
     }
-//	if (dispatcher != NULL) {
-//		logger(LOG_LEVEL_DEBUG,	"%s [%u]: Dispatching event type %u.\n",
-//				__FUNCTION__, __LINE__, event->type);
-//
-//		dispatcher(event);
-//	}
-//	else {
-//		logger(LOG_LEVEL_WARN,	"%s [%u]: No dispatch callback set!\n",
-//				__FUNCTION__, __LINE__);
-//	}
 }
 
 
@@ -240,32 +221,15 @@ static bool is_escape_key(uiohook_event event) {
         && (escape_key->mask == event.mask)
         && (escape_key->data.keyboard.keycode == event.data.keyboard.rawcode);
     return is_escape;
-//            escape_key->data.keyboard.keychar == event.data.keyboard.keychar);
 }
 
 static void process_key_released(int nCode, WPARAM wParam, LPARAM lParam) {
-    // Check and setup modifiers.
     current_modifiers = 0x0000;
     initialize_modifiers();
-    // Populate key pressed event.
-//	event.time = kbhook->time;
-//    event.reserved = 0x00;
-//
-//    event.type = EVENT_KEY_RELEASED;
     event.mask = get_modifiers();
     if(escape_mode && !event.mask && !is_escape) {
         escape_mode = 0;
     }
-//
-//    event.data.keyboard.keycode = keycode_to_scancode(wParam, HIWORD(lParam));
-//    event.data.keyboard.rawcode = wParam;
-//    event.data.keyboard.keychar = CHAR_UNDEFINED;
-//
-//    logger(LOG_LEVEL_INFO, "%s [%u]: Key %#X released. (%#X)\n",
-//           __FUNCTION__, __LINE__, event.data.keyboard.keycode, event.data.keyboard.rawcode);
-//
-//    // Fire key released event.
-//    dispatch_event(&event);
 }
 
 UIOHOOK_API LRESULT CALLBACK keyboard_hook_event_proc(int nCode, WPARAM wParam, LPARAM lParam) {
@@ -284,52 +248,11 @@ UIOHOOK_API LRESULT CALLBACK keyboard_hook_event_proc(int nCode, WPARAM wParam, 
         process_key_released(nCode, wParam, lParam);
     }
 
-//    hook_result = escape_mode;
-//    if(escape_mode) {
-//        hook_result = -1;
-//    } else {
-//        hook_result = 0;
-//    }
-
-//	KBDLLHOOKSTRUCT *kbhook = (KBDLLHOOKSTRUCT *) lParam;
-//    process_key_pressed(nCode, wParam, lParam);
-//	switch (wParam) {
-//		case WM_KEYDOWN:
-//		case WM_SYSKEYDOWN:
-//			process_key_pressed(kbhook);
-//			break;
-//
-//		case WM_KEYUP:
-//		case WM_SYSKEYUP:
-//			process_key_released(kbhook);
-//			break;
-//
-//		default:
-//			// In theory this *should* never execute.
-//			logger(LOG_LEVEL_DEBUG,	"%s [%u]: Unhandled Windows keyboard event: %#X.\n",
-//					__FUNCTION__, __LINE__, (unsigned int) wParam);
-//			break;
-//	}
-//
-
-//	if (nCode < 0 || event.reserved ^ 0x01) {
-//		hook_result = CallNextHookEx(keyboard_event_hhook, nCode, wParam, lParam);
-//	}
-//	else {
-//		logger(LOG_LEVEL_DEBUG,	"%s [%u]: Consuming the current event. (%li)\n",
-//				__FUNCTION__, __LINE__, (long) hook_result);
-//	}
-//
     return hook_result;
-//return 0;
 }
 
 static int process_button_pressed(int nCode, WPARAM wParam, LPARAM lParam) {
     event.type = EVENT_MOUSE_PRESSED;
-    if(from_java){
-        from_java = !from_java;
-        return -1;
-    }
     dispatch_event(&event);
     return 0;
 }
@@ -348,57 +271,12 @@ UIOHOOK_API LRESULT CALLBACK mouse_hook_event_proc(int nCode, WPARAM wParam, LPA
     if (pMouseStruct != NULL){
         if(wParam == WM_LBUTTONDOWN)
         {
-            hook_result = process_button_pressed(nCode, wParam, lParam);
-//            printf( "clicked" );
+            return process_button_pressed(nCode, wParam, lParam);
         }
-//        printf("Mouse position X = %d  Mouse Position Y = %d\n", pMouseStruct->pt.x,pMouseStruct->pt.y);
     }
-//    return CallNextHookEx(hMouseHook, nCode, wParam, lParam);
-//    if ((lParam & (1 << 30)) == 0) {
-//        hook_result = process_button_pressed(nCode, wParam, lParam);
-//    } else {
-//        process_key_released(nCode, wParam, lParam);
-//    }
-
-//    hook_result = escape_mode;
-//    if(escape_mode) {
-//        hook_result = -1;
-//    } else {
-//        hook_result = 0;
-//    }
-
-//	KBDLLHOOKSTRUCT *kbhook = (KBDLLHOOKSTRUCT *) lParam;
-//    process_key_pressed(nCode, wParam, lParam);
-//	switch (wParam) {
-//		case WM_KEYDOWN:
-//		case WM_SYSKEYDOWN:
-//			process_key_pressed(kbhook);
-//			break;
-//
-//		case WM_KEYUP:
-//		case WM_SYSKEYUP:
-//			process_key_released(kbhook);
-//			break;
-//
-//		default:
-//			// In theory this *should* never execute.
-//			logger(LOG_LEVEL_DEBUG,	"%s [%u]: Unhandled Windows keyboard event: %#X.\n",
-//					__FUNCTION__, __LINE__, (unsigned int) wParam);
-//			break;
-//	}
-//
-
-//	if (nCode < 0 || event.reserved ^ 0x01) {
-//		hook_result = CallNextHookEx(keyboard_event_hhook, nCode, wParam, lParam);
-//	}
-//	else {
-//		logger(LOG_LEVEL_DEBUG,	"%s [%u]: Consuming the current event. (%li)\n",
-//				__FUNCTION__, __LINE__, (long) hook_result);
-//	}
-//
-    return hook_result;
-//return 0;
+    return 0;
 }
+
 // Callback function that handles events.
 void CALLBACK win_hook_event_proc(HWINEVENTHOOK hook, DWORD event, HWND hWnd, LONG idObject, LONG idChild,
                                   DWORD dwEventThread, DWORD dwmsEventTime) {
@@ -460,30 +338,6 @@ UIOHOOK_API int hook_run() {
         }
     }
 
-    // Create the native hooks.
-//	SetWindowsHookEx(WH_KEYBOARD, keyboard_hook_event_proc, hInst, 0);
-//	mouse_event_hhook = SetWindowsHookEx(WH_MOUSE_LL, mouse_hook_event_proc, hInst, 0);
-
-    // Create a window event hook to listen for capture change.
-
-/*	win_event_hhook = SetWinEventHook(
-			EVENT_OBJECT_NAMECHANGE, EVENT_OBJECT_NAMECHANGE,
-			NULL,
-			win_hook_event_proc,
-			0, 0,
-			WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);*/
-
-
-    // If we did not encounter a problem, start processing events.
-//	if (keyboard_event_hhook != NULL /*&& mouse_event_hhook != NULL*/) {
-//		if (win_event_hhook == NULL) {
-//			logger(LOG_LEVEL_WARN,	"%s [%u]: SetWinEventHook() failed!\n",
-//					__FUNCTION__, __LINE__);
-//		}
-//
-//		logger(LOG_LEVEL_DEBUG,	"%s [%u]: SetWindowsHookEx() successful.\n",
-//				__FUNCTION__, __LINE__);
-
     // Check and setup modifiers.
     initialize_modifiers();
 
@@ -500,14 +354,6 @@ UIOHOOK_API int hook_run() {
         TranslateMessage(&message);
         DispatchMessage(&message);
     }
-//	}
-//	else {
-//		logger(LOG_LEVEL_ERROR,	"%s [%u]: SetWindowsHookEx() failed! (%#lX)\n",
-//				__FUNCTION__, __LINE__, (unsigned long) GetLastError());
-//
-//		status = UIOHOOK_ERROR_SET_WINDOWS_HOOK_EX;
-//	}
-
 
     // Unregister any hooks that may still be installed.
     unregister_running_hooks();

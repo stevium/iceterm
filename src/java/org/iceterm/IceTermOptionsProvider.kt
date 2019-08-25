@@ -6,7 +6,10 @@ import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.util.xmlb.annotations.Property
+import org.apache.commons.lang.StringUtils
+import org.iceterm.ceintegration.ConEmuConstants
 import org.iceterm.ceintegration.ConEmuStartInfo
+import java.io.File
 import java.lang.Exception
 import javax.swing.KeyStroke
 
@@ -24,7 +27,13 @@ class IceTermOptionsProvider : PersistentStateComponent<IceTermOptionsProvider.S
     }
 
     fun getConEmuPath(): String? {
-        return myState.myConEmuPath ?: defaultConEmuPath()
+        if(StringUtils.isNotEmpty(myState.myConEmuPath)) {
+            var path: String? = myState.myConEmuPath
+            path = path?.replace("^\"|\"$", "")
+            path = path?.replace("^\'|\'$", "")
+            return path?.trim()
+        }
+        return defaultConEmuPath()
     }
 
     fun setConEmuPath(conemuPath: String) {
@@ -57,34 +66,9 @@ class IceTermOptionsProvider : PersistentStateComponent<IceTermOptionsProvider.S
         var myConEmuPath: String? = null
         var myShellTask: String? = null
         var myEscapeKey: String? = null
-        @get:Property(surroundWithTag = false, flat = true)
-        var envDataOptions = EnvironmentVariablesDataOptions()
     }
-
-    fun getEnvData(): EnvironmentVariablesData {
-        return myState.envDataOptions.get()
-    }
-
-    fun setEnvData(envData: EnvironmentVariablesData) {
-        myState.envDataOptions.set(envData)
-    }
-
 
     fun defaultConEmuPath(): String {
-//        val shell = System.getenv("SHELL")
-//        if (shell != null && File(shell).canExecute()) {
-//            return shell
-//        }
-//        if (SystemInfo.isUnix) {
-//            val bashPath = "/bin/bash"
-//            if (File(bashPath).exists()) {
-//                return bashPath
-//            }
-//            return "/bin/sh"
-//        }
-//        return "cmd.exe"
-
-//        return defaultStartInfo.getConEmuExecutablePath();
         return defaultStartInfo.getConEmuExecutablePath();
     }
 

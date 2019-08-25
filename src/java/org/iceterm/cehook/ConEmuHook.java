@@ -7,7 +7,7 @@ import org.iceterm.ceintegration.ConEmuStartInfo;
 public class ConEmuHook {
     static {
         try {
-            System.load(ConEmuStartInfo.getIcetermLibPath());
+            System.load(ConEmuStartInfo.getIceTermDllPath());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -33,7 +33,7 @@ public class ConEmuHook {
                 }
             });
             serverThread.start();
-            inject(conEmuPid, new ConEmuStartInfo().getCeHookLibPath());
+            inject(conEmuPid, new ConEmuStartInfo().getCeHookDllPath());
         } catch (Exception e) {
             e.printStackTrace();
         }

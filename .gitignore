@@ -10,3 +10,4 @@ Debug
 *.exp
 *.class
 cmake-build-debug
+cmake-release*

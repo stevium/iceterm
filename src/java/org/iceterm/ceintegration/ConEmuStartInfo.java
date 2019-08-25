@@ -2,8 +2,10 @@ package org.iceterm.ceintegration;
 
 import com.intellij.openapi.project.Project;
 import org.apache.commons.lang.NullArgumentException;
+import org.apache.commons.lang.StringUtils;
 import org.iceterm.IceTermOptionsProvider;
 import org.iceterm.IceTermProjectOptionsProvider;
+import org.iceterm.util.FileHelper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
@@ -16,12 +18,19 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.CodeSource;
-import java.util.Comparator;
-import java.util.Locale;
-import java.util.TreeMap;
+import java.util.*;
 
 public class ConEmuStartInfo {
+    public static String binFolder;
+    public static String ICE_TERM = "iceterm";
+
+    static {
+        try {
+            binFolder = extractBinaries();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     @Nullable
     private org.w3c.dom.Document baseConfiguration;
@@ -115,17 +124,8 @@ public class ConEmuStartInfo {
         IceTermProjectOptionsProvider myProjectOptionsProvider = IceTermProjectOptionsProvider.getInstance(myProject);
         this.setsStartupDirectory(myProjectOptionsProvider.getStartingDirectory());
         this.setConsoleProcessCommandLine(myOptionsProvider.getShellTask());
-        this.setConEmuExecutablePath(myOptionsProvider.defaultConEmuPath());
+        this.setConEmuExecutablePath(myOptionsProvider.getConEmuPath());
         this.setLogLevel(ConEmuStartInfo.LogLevels.Basic);
-
-//        startinfo.setConEmuExecutablePath(conEmuExe);
-
-//        startinfo.setConEmuConsoleServerExecutablePath(conEmuCD);
-//        startinfo.setConsoleProcessCommandLine("{Shells::PowerShell}");
-//        StringBuilder sbText = new StringBuilder();
-//        startinfo.setAnsiStreamChunkReceivedEventSink((source, event) -> {
-//            sbText.append(event.GetMbcsText());
-//        });
     }
 
     @Nullable
@@ -144,7 +144,7 @@ public class ConEmuStartInfo {
             return baseConfiguration;
 
         try {
-            InputStream resourceAsStream = this.getClass().getResourceAsStream("/org/iceterm/ceintegration/ConEmu.xml");
+            InputStream resourceAsStream = this.getClass().getClassLoader().getResourceAsStream(ICE_TERM + "/ConEmu.xml");
             DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
 
@@ -321,25 +321,22 @@ public class ConEmuStartInfo {
     }
 
     @NotNull
-    public Iterable<String> EnumEnv()
-    {
+    public Iterable<String> EnumEnv() {
         return environment.keySet();
     }
 
     @Nullable
-    public String GetEnv(@NotNull String name)
-    {
-        if(name == null || name.isEmpty())
+    public String GetEnv(@NotNull String name) {
+        if (name == null || name.isEmpty())
             throw new NullArgumentException("name");
         return environment.get(name);
     }
 
-    public void SetEnv(@NotNull String name, @Nullable String value)
-    {
-        if(name == null || name.isEmpty())
+    public void SetEnv(@NotNull String name, @Nullable String value) {
+        if (name == null || name.isEmpty())
             throw new NullArgumentException("name");
         AssertNotUsedUp();
-        if(value == null)
+        if (value == null)
             environment.remove(name);
         else {
             String envVariable = environment.get(name);
@@ -347,55 +344,54 @@ public class ConEmuStartInfo {
         }
     }
 
-    private void AssertNotUsedUp()
-    {
-        if(isUsedUp)
+    private void AssertNotUsedUp() {
+        if (isUsedUp)
             throw new IllegalStateException("This change is not possible because the start info object has already been used up.");
     }
 
     @NotNull
-    private String InitConEmuLocation()
-    {
-        String dir = null;
+    private String InitConEmuLocation() {
+        String envPath = System.getenv("PATH");
+        LinkedList<String> searhPaths = new LinkedList<String>();
 
-        try {
-            dir = getContainingFolder(ConEmuStartInfo.class);
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (!StringUtils.isEmpty(binFolder))
+            searhPaths.add(new File(binFolder, "ConEmu").getPath());
+
+        searhPaths.addAll(Arrays.asList(envPath.split(";")));
+
+        for (String dir : searhPaths) {
+            File candidate = new File(dir, ConEmuConstants.ConEmuExeName);
+            if (candidate.exists()) {
+                return candidate.getAbsolutePath();
+            }
+
+            candidate = new File(new File(dir, ConEmuConstants.ConEmuSubfolderName), ConEmuConstants.ConEmuExeName);
+            if (candidate.exists())
+                return candidate.getPath();
+
         }
 
-        if(dir == null || dir.isEmpty())
-            return "";
-
-        File candidate = new File(dir, ConEmuConstants.ConEmuExeName);
-        if(candidate.exists())
-            return candidate.getPath();
-
-        candidate = new File(new File(dir, ConEmuConstants.ConEmuSubfolderName), ConEmuConstants.ConEmuExeName);
-        if(candidate.exists())
-            return candidate.getPath();
-
+//        Logger.getInstance(this.getClass()).info("DIR IS " + dir);
         return "";
     }
 
-    protected void MarkAsUsedUp()
-    {
+    protected void MarkAsUsedUp() {
         isUsedUp = true;
     }
 
     @NotNull
     private String TryDeriveConEmuConsoleExtenderExecutablePath(
-           @NotNull String sConEmuPath) {
-        if(sConEmuPath == null)
+            @NotNull String sConEmuPath) {
+        if (sConEmuPath == null)
             throw new NullArgumentException("sConEmuPath");
-        if(sConEmuPath == "")
+        if (sConEmuPath == "")
             return "";
         String dir = new File(sConEmuPath).getParent();
         if (dir == null || dir.isEmpty())
             return "";
 
         File candidate = new File(dir, ConEmuConstants.ConEmuConsoleExtenderExeName);
-        if(candidate.exists())
+        if (candidate.exists())
             return candidate.getPath();
 
         candidate = new File(new File(dir, ConEmuConstants.ConEmuSubfolderName), ConEmuConstants.ConEmuConsoleExtenderExeName);
@@ -407,9 +403,9 @@ public class ConEmuStartInfo {
 
     @NotNull
     private String TryDeriveConEmuConsoleServerExecutablePath(@NotNull String sConEmuPath) {
-        if(sConEmuPath == null)
+        if (sConEmuPath == null)
             throw new NullArgumentException("sConEmuPath");
-        if(sConEmuPath == "")
+        if (sConEmuPath == "")
             return "";
         String dir = new File(sConEmuPath).getParent();
         if (dir == null || dir.isEmpty())
@@ -419,7 +415,7 @@ public class ConEmuStartInfo {
         sFileName += ".dll";
 
         File candidate = new File(dir, sFileName);
-        if(candidate.exists())
+        if (candidate.exists())
             return candidate.getPath();
 
         candidate = new File(new File(dir, ConEmuConstants.ConEmuSubfolderName), sFileName);
@@ -429,27 +425,31 @@ public class ConEmuStartInfo {
         return "";
     }
 
-    public static String getIcetermLibPath() throws Exception {
-        return new File(getContainingFolder(ConEmuStartInfo.class),"native\\iceterm.dll").getAbsolutePath();
+    public static String getIceTermDllPath() {
+        String ext = (System.getProperty("sun.arch.data.model").equals("64")) ? "64.dll" : ".dll";
+        File icetermDll = new File(binFolder, "iceterm" + ext);
+        if(icetermDll.exists())
+            return icetermDll.getAbsolutePath();
+        return "";
     }
 
-    public static String getCeHookLibPath() throws Exception {
-        return new File(getContainingFolder(ConEmuStartInfo.class),"native\\cehook.dll").getAbsolutePath();
+    public static String getCeHookDllPath() {
+        String ext = (System.getProperty("sun.arch.data.model").equals("64")) ? "64.dll" : ".dll";
+        File cehookDll = new File(binFolder, "cehook" + ext);
+        if(cehookDll.exists())
+            return cehookDll.getAbsolutePath();
+        return "";
     }
 
-    private static String getContainingFolder(Class aclass) throws Exception {
-        CodeSource codeSource = aclass.getProtectionDomain().getCodeSource();
-
-        File jarFile;
-
-        if (codeSource.getLocation() != null) {
-            jarFile = new File(codeSource.getLocation().toURI());
-        } else {
-            String path = aclass.getResource(aclass.getSimpleName() + ".class").getPath();
-//            String jarFilePath = path.substring(path.indexOf(":") + 1, path.indexOf("!"));
-//            jarFilePath = URLDecoder.decode(jarFilePath, "UTF-8");
-            jarFile = new File(path);
+   public static String extractBinaries() throws IOException {
+        File unzipDest = new File(FileHelper.getJarPath(ConEmuStartInfo.class), ICE_TERM + "-bin/");
+        if(unzipDest.exists()) {
+            return unzipDest.getPath();
         }
-        return jarFile.getParentFile().getAbsolutePath();
+
+       InputStream in = ConEmuStartInfo.class.getClassLoader().getResourceAsStream(ICE_TERM + "/bin.zip");
+       FileHelper.unzip(in, unzipDest.getPath());
+        return unzipDest.getAbsolutePath();
     }
 }
+

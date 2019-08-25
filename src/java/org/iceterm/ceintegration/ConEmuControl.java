@@ -2,6 +2,7 @@ package org.iceterm.ceintegration;
 
 import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.Kernel32;
+import com.sun.jna.platform.win32.WinDef;
 import com.sun.jna.platform.win32.WinDef.HWND;
 import com.sun.jna.platform.win32.WinUser.WNDENUMPROC;
 import org.iceterm.util.User32Ext;
@@ -11,14 +12,16 @@ import org.iceterm.util.tasks.Task;
 import org.apache.commons.lang.NullArgumentException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import sun.awt.windows.WComponentPeer;
 
+import javax.swing.*;
 import java.awt.*;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.util.ArrayList;
 import java.util.EventListener;
 import java.util.List;
+
+import static com.sun.jna.Native.getComponentPointer;
 
 /**
  * <p>This is a console emulator control that embeds a fully functional console view in a Windows Forms window. It is capable of running any console application with full interactivity and advanced console functions. Applications will detect it as an actual console and will not fall back to the output redirection mode with reduced interactivity or formatting.</p>
@@ -41,15 +44,20 @@ public class ConEmuControl extends Canvas {
      * The running session, if currently running.
      */
     @Nullable
-    private ConEmuSession _running;
+    public static ConEmuSession session;
 
     private List<StateChagedListener> stateChagedListeners = new ArrayList();
-    private ConEmuSession session;
     private ConEmuStartInfo _startinfo;
-    public long parentHwnd;
+
+    public static void terminate() {
+        if(session != null) {
+            session.close();
+        }
+        session = null;
+    }
 
     public ConEmuSession getSession() {
-        return _running;
+        return session;
     }
 
     public ConEmuControl(ConEmuStartInfo startinfo)
@@ -68,21 +76,20 @@ public class ConEmuControl extends Canvas {
         }
     };
 
-    public GuiMacroResult setParentHWND(long hwnd) {
-        if(_running!= null)
-            return _running.ExecuteGuiMacroTextSync("SetParentHWND " + hwnd);
-        this.parentHwnd = hwnd;
+    public GuiMacroResult setParentHWND(Pointer hwnd) {
+        if(session != null)
+            return session.ExecuteGuiMacroTextSync("SetParentHWND " + Pointer.nativeValue(hwnd));
         return null;
     }
 
     public GuiMacroResult setFocus() {
-        if(_running!= null)
-            return _running.ExecuteGuiMacroTextSync("FocusConEmu");
+        if(session != null)
+            return session.ExecuteGuiMacroTextSync("FocusConEmu");
         return null;
     }
 
     public void resetParentHWND() {
-        setParentHWND(Pointer.nativeValue(getHandle().getPointer()));
+        setParentHWND(getHandle().getPointer());
     }
 
     @Override
@@ -140,8 +147,8 @@ public class ConEmuControl extends Canvas {
     public void setIsStatusbarVisible(boolean value)
     {
         _isStatusbarVisible = value;
-        if(_running != null) {
-            _running.beginGuiMacro("Status").withParam(0).withParam(value ? 1 : 2).executeAsync();
+        if(session != null) {
+            session.beginGuiMacro("Status").withParam(0).withParam(value ? 1 : 2).executeAsync();
         }
     }
 
@@ -149,7 +156,7 @@ public class ConEmuControl extends Canvas {
     {
         // Special case for just-exited payload: user might get the payload-exited event before us and call this property to get its exit code, while we have not recorded the fresh exit code yet
         // So call into the current session and fetch the actual value, if available (no need to write to field, will update in our event handler soon)
-        ConEmuSession running = _running;
+        ConEmuSession running = session;
         if((running != null) && (running.isConsoleProcessExited()))
             return running.getConsoleProcessExitCode();
         return _nLastExitCode; // No console emulator open or current process still running in the console emulator, use prev exit code if there were
@@ -158,17 +165,17 @@ public class ConEmuControl extends Canvas {
     @NotNull
     public ConEmuSession getRunningSession()
     {
-        return _running;
+        return session;
     }
 
     public States getState()
     {
-        return _running != null ? (_running.isConsoleProcessExited() ? States.ConsoleEmulatorEmpty : States.ConsoleEmulatorWithConsoleProcess) : (_nLastExitCode != null ? States.Recycled : States.Unused);
+        return session != null ? (session.isConsoleProcessExited() ? States.ConsoleEmulatorEmpty : States.ConsoleEmulatorWithConsoleProcess) : (_nLastExitCode != null ? States.Recycled : States.Unused);
     }
 
     public boolean getIsConsoleEmulatorOpen()
     {
-        return _running != null;
+        return session != null;
     }
 
     @NotNull
@@ -178,7 +185,7 @@ public class ConEmuControl extends Canvas {
             throw new NullArgumentException("startinfo");
 
         // Close prev session if there is one
-        if(_running != null)
+        if(session != null)
             throw new IllegalStateException("Cannot start a new console process because another console emulator session has failed to close in due time.");
 
         _autostartinfo = null; // As we're starting, no more chance for an autostart
@@ -187,32 +194,29 @@ public class ConEmuControl extends Canvas {
         // createHandle();
 
         // Spawn session
-        ConEmuSession session = new ConEmuSession(startinfo, new ConEmuSession.HostContext(getHandle(), getIsStatusbarVisible()));
-        _running = session;
+        session = new ConEmuSession(startinfo, new ConEmuSession.HostContext(getHandle(), getIsStatusbarVisible()));
         stateChanged();
         session.waitForConsoleEmulatorCloseAsync().continueWith(new Continuation() {
             @Override
             public Object then(Task task) throws Exception {
                 try {
-                    _nLastExitCode = _running.getConsoleProcessExitCode();
+                    _nLastExitCode = session.getConsoleProcessExitCode();
                 }
                 catch (Exception ex)
                 {
                     // NOP
                 }
-                _running = null;
+                session = null;
                 stateChanged();
                 return _nLastExitCode;
             }
         });
-
-
         return session;
     }
 
     private void AssertNotRunning()
     {
-        if(_running != null)
+        if(session != null)
             throw new IllegalStateException("This changes is not possible wen a console process is already running.");
     }
 
@@ -229,7 +233,12 @@ public class ConEmuControl extends Canvas {
     }
 
     public HWND getHandle() {
-        return new HWND(Pointer.createConstant(((WComponentPeer) this.getPeer()).getHWnd()));
+        try {
+            return new HWND(getComponentPointer(this));
+        } catch (Exception e) {
+            return null;
+        }
+//        return new HWND(Pointer.createConstant(((WComponentPeer) this.getPeer()).getHWnd()));
     }
 
     private void stateChanged() {
@@ -241,12 +250,14 @@ public class ConEmuControl extends Canvas {
 
     public void removeFocus() {
         int appThread = Kernel32.INSTANCE.GetCurrentThreadId();
-        int foregroundThread = User32Ext.INSTANCE.GetWindowThreadProcessId(User32Ext.INSTANCE.GetForegroundWindow(), null);
+        WinDef.HWND hwnd = new WinDef.HWND(getComponentPointer(((JComponent)this.getParent()).getRootPane().getParent()));
+        int foregroundThread = User32Ext.INSTANCE.GetWindowThreadProcessId(hwnd, null);
         User32Ext.INSTANCE.AttachThreadInput(foregroundThread, appThread, true);
-        User32Ext.INSTANCE.SetForegroundWindow(User32Ext.INSTANCE.GetForegroundWindow());
-        User32Ext.INSTANCE.SetFocus(User32Ext.INSTANCE.GetForegroundWindow());
-        User32Ext.INSTANCE.SetActiveWindow(User32Ext.INSTANCE.GetForegroundWindow());
-        User32Ext.INSTANCE.SwitchToThisWindow(User32Ext.INSTANCE.GetForegroundWindow(), true);
+        User32Ext.INSTANCE.SetForegroundWindow(this.getHandle());
+        User32Ext.INSTANCE.SetForegroundWindow(hwnd);
+        User32Ext.INSTANCE.SetFocus(hwnd);
+//        User32Ext.INSTANCE.SetActiveWindow(hwnd);
+//        User32Ext.INSTANCE.SwitchToThisWindow(hwnd, true);
         User32Ext.INSTANCE.AttachThreadInput(foregroundThread, appThread, false);
     }
 

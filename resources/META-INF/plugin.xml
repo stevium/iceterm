@@ -17,6 +17,8 @@
   <idea-version since-build="173.0"/>
 
   <extensions defaultExtensionNs="com.intellij">
+    <postStartupActivity implementation="org.iceterm.IceTermPostStartupActivity"/>
+
     <toolWindow id="IceTerm" secondary="true" icon="/iceterm/OpenTerminal_13x13.svg" anchor="right"
                 factoryClass="org.iceterm.IceTermToolWindowFactory"/>
 

@@ -19,7 +19,7 @@ import java.io.IOException;
 public class GuiMacroExecutor implements AutoCloseable {
     static {
         try {
-            System.load(ConEmuStartInfo.getIcetermLibPath());
+            System.load(ConEmuStartInfo.getIceTermDllPath());
         } catch (Exception e) {
             e.printStackTrace();
         }

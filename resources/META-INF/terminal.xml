@@ -2,13 +2,6 @@
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="IceTerm" secondary="true" icon="/iceterm/OpenTerminal_13x13.svg" anchor="right"
                     factoryClass="org.iceterm.IceTermToolWindowFactory"/>
-
-        <!--<projectConfigurable groupId="tools" groupWeight="130" displayName="Terminal" id="terminal"-->
-                             <!--instance="iceterm.IceTermOptionsConfigurable"/>-->
-
-        <!--<applicationService serviceImplementation="org.jetbrains.plugins.terminal.TerminalOptionsProvider"/>-->
-
-        <!--<projectService serviceImplementation="org.jetbrains.plugins.terminal.TerminalProjectOptionsProvider"/>-->
     </extensions>
 
     <project-components>
@@ -17,9 +10,4 @@
             <implementation-class>org.iceterm.IceTermView</implementation-class>
         </component>
     </project-components>
-
-    <!--<extensionPoints>-->
-        <!--<extensionPoint qualifiedName="iceterm.localTerminalCustomizer"-->
-                        <!--interface="iceterm.LocalTerminalCustomizer"/>-->
-    <!--</extensionPoints>-->
 </idea-plugin>

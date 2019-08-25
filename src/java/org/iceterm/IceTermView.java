@@ -16,15 +16,19 @@ import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import com.intellij.ui.content.ContentManager;
 import com.intellij.util.containers.hash.HashMap;
+import com.sun.jna.platform.win32.Kernel32;
+import com.sun.jna.platform.win32.User32;
+import com.sun.jna.platform.win32.WinDef;
 import org.iceterm.cehook.ConEmuHook;
 import org.iceterm.cehook.GlobalScreen;
 import org.iceterm.cehook.dispatcher.SwingDispatchService;
 import org.iceterm.ceintegration.ConEmuControl;
 import org.iceterm.ceintegration.ConEmuStartInfo;
 import org.iceterm.ceintegration.States;
+import org.iceterm.util.User32Ext;
 import org.iceterm.util.WinApi;
 import org.jetbrains.annotations.NotNull;
-import sun.awt.windows.WComponentPeer;
+import static com.sun.jna.Native.getComponentPointer;
 
 import javax.swing.*;
 import java.awt.*;
@@ -182,20 +186,16 @@ public class IceTermView implements Disposable {
                     Thread t = new Thread(() -> {
                         try {
                             Thread.sleep(20);
+                            conEmuControl.setFocus();
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
-                        if(myToolWindow.getComponent().getRootPane() == null)   {
-                            return;
-                        }
-                        conEmuControl.getParent().requestFocus();
-                        conEmuControl.setFocus();
                     });
                     t.start();
                 }
             }
 
-            if (event.getID() == 501 && conEmuControl.getPeer() != null) {
+            if (event.getID() == 501 && conEmuControl.getHandle() != null) {
                 MouseEvent mouseEvent = (MouseEvent) event;
                 String activeToolWindowId = myToolWindow.getToolWindowManager().getActiveToolWindowId();
                 if (activeToolWindowId == null || !activeToolWindowId.equals(myToolWindow.getId())) {
@@ -318,7 +318,7 @@ public class IceTermView implements Disposable {
                     frame.add(tempBackup, BorderLayout.CENTER);
                 }
             }
-            conEmuControl.setParentHWND(((WComponentPeer) tempBackup.getPeer()).getHWnd());
+            conEmuControl.setParentHWND(getComponentPointer(tempBackup));
         }
     }
 

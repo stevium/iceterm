@@ -1,5 +1,6 @@
 package org.iceterm;
 
+import com.intellij.openapi.wm.impl.IdeFrameImpl;
 import org.iceterm.cehook.mouse.NativeMouseEvent;
 import org.iceterm.cehook.mouse.NativeMouseListener;
 import org.iceterm.ceintegration.ConEmuControl;
