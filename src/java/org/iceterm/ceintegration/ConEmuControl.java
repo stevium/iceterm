@@ -1,5 +1,6 @@
 package org.iceterm.ceintegration;
 
+import com.intellij.openapi.wm.ToolWindowManager;
 import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.Kernel32;
 import com.sun.jna.platform.win32.WinDef;
@@ -256,9 +257,8 @@ public class ConEmuControl extends Canvas {
         User32Ext.INSTANCE.SetForegroundWindow(this.getHandle());
         User32Ext.INSTANCE.SetForegroundWindow(hwnd);
         User32Ext.INSTANCE.SetFocus(hwnd);
-//        User32Ext.INSTANCE.SetActiveWindow(hwnd);
-//        User32Ext.INSTANCE.SwitchToThisWindow(hwnd, true);
         User32Ext.INSTANCE.AttachThreadInput(foregroundThread, appThread, false);
+        ToolWindowManager.getInstance(_startinfo.getProject()).activateEditorComponent();
     }
 
     public interface StateChagedListener extends EventListener {

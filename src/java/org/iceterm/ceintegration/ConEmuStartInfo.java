@@ -52,6 +52,10 @@ public class ConEmuStartInfo {
     private boolean isElevated;
     private Project myProject;
 
+    public Project getProject() {
+        return myProject;
+    }
+
     public enum LogLevels {
         /**
          * Logging is disabled
