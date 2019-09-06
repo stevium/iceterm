@@ -43,6 +43,15 @@
   </extensionPoints>
 
   <actions>
+    <action id="Terminal.OpenInIceTerm" class="org.iceterm.action.RevealFileInTerminalAction"
+            text="Open in IceTerm"
+            description="Open current file location in ConEmu terminal"
+            icon="/iceterm/OpenTerminal_13x13.svg">
+      <add-to-group group-id="RevealGroup" anchor="last"/>
+      <add-to-group group-id="TouchBarDefault_alt" anchor="last"/>
+    </action>
   </actions>
+
+  <depends>com.intellij.modules.platform</depends>
 
 </idea-plugin>

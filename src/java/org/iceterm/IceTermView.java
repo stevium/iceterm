@@ -7,6 +7,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.actionSystem.ex.AnActionListener;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.openapi.wm.ToolWindowType;
@@ -16,17 +17,16 @@ import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import com.intellij.ui.content.ContentManager;
 import com.intellij.util.containers.hash.HashMap;
-import com.sun.jna.platform.win32.Kernel32;
-import com.sun.jna.platform.win32.User32;
-import com.sun.jna.platform.win32.WinDef;
 import org.iceterm.cehook.ConEmuHook;
 import org.iceterm.cehook.GlobalScreen;
 import org.iceterm.cehook.dispatcher.SwingDispatchService;
 import org.iceterm.ceintegration.ConEmuControl;
+import org.iceterm.ceintegration.ConEmuSession;
 import org.iceterm.ceintegration.ConEmuStartInfo;
 import org.iceterm.ceintegration.States;
-import org.iceterm.util.User32Ext;
 import org.iceterm.util.WinApi;
+import org.iceterm.util.tasks.Task;
+import org.iceterm.util.tasks.TaskCompletionSource;
 import org.jetbrains.annotations.NotNull;
 import static com.sun.jna.Native.getComponentPointer;
 
@@ -73,14 +73,38 @@ public class IceTermView implements Disposable {
         return project.getComponent(IceTermView.class);
     }
 
-    public void createNewSession() {
+    public void openTerminalIn(VirtualFile fileToOpen) {
         ToolWindow window = ToolWindowManager.getInstance(myProject).getToolWindow(IceTermToolWindowFactory.TOOL_WINDOW_ID);
+        if (window != null && window.isAvailable()) {
+                ((ToolWindowImpl)window).ensureContentInitialized();
+                if (fileToOpen != null) {
+                    if(conEmuControl == null && conEmuControl.getSession() == null) {
+                        try {
+                            this.createNewSession().waitForCompletion();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    ConEmuSession session = conEmuControl.getSession();
+                    String path = fileToOpen.isDirectory() ? fileToOpen.getPath() : fileToOpen.getParent().getPath();
+                    path = path.replace("\"", "\"\"");
+                    session.ExecuteGuiMacroTextSync("Print(@\"cd \"\"" + path + "\"\"\",\"\n\")");
+                    conEmuControl.getParent().requestFocus();
+                    conEmuControl.setFocus();
+                }
+        }
+    }
+
+    public Task<States> createNewSession() {
+        ToolWindow window = ToolWindowManager.getInstance(myProject).getToolWindow(IceTermToolWindowFactory.TOOL_WINDOW_ID);
+        TaskCompletionSource<States> tasker = new TaskCompletionSource<>();
         if (window != null && window.isAvailable()) {
             createTerminalContent(myToolWindow);
             window.activate(null);
             conEmuControl.addStateChangedListener(() -> {
                 States state = conEmuControl.getState();
                 if (state == States.ConsoleEmulatorWithConsoleProcess) {
+                    tasker.setResult(state);
                     Process process = conEmuControl.getSession().getProcess();
                     ConEmuHook hook = new ConEmuHook();
                     System.out.println("Setting up native hook hook");
@@ -99,6 +123,7 @@ public class IceTermView implements Disposable {
                 }
             });
         }
+        return tasker.getTask();
     }
 
     private void createTerminalContent(ToolWindowImpl toolWindow) {
