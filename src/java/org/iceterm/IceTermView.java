@@ -1,7 +1,6 @@
 package org.iceterm;
 
 import com.intellij.ide.actions.ToolWindowViewModeAction;
-import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataContext;
@@ -17,17 +16,11 @@ import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import com.intellij.ui.content.ContentManager;
 import com.intellij.util.containers.hash.HashMap;
-import org.iceterm.cehook.ConEmuHook;
-import org.iceterm.cehook.GlobalScreen;
-import org.iceterm.cehook.dispatcher.SwingDispatchService;
+import org.iceterm.action.ConEmuStateChangedListener;
 import org.iceterm.ceintegration.ConEmuControl;
-import org.iceterm.ceintegration.ConEmuSession;
 import org.iceterm.ceintegration.ConEmuStartInfo;
-import org.iceterm.ceintegration.States;
-import org.iceterm.util.WinApi;
-import org.iceterm.util.tasks.Task;
-import org.iceterm.util.tasks.TaskCompletionSource;
 import org.jetbrains.annotations.NotNull;
+
 import static com.sun.jna.Native.getComponentPointer;
 
 import javax.swing.*;
@@ -39,11 +32,17 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Map;
 
-public class IceTermView implements Disposable {
+public class IceTermView  {
 
     private IceTermToolWindow iceTermToolWindowPanel;
     private Project myProject;
     private ToolWindowImpl myToolWindow;
+    private ConEmuStateChangedListener conEmuStateChangedListener;
+
+    public ConEmuControl getConEmuControl() {
+        return conEmuControl;
+    }
+
     private ConEmuControl conEmuControl;
     private Panel tempBackup;
     private JFrame frame;
@@ -63,67 +62,36 @@ public class IceTermView implements Disposable {
 
         myToolWindow = (ToolWindowImpl) toolWindow;
 
+        conEmuStateChangedListener = new ConEmuStateChangedListener(myProject);
         if (myToolWindow.getContentManager().getContentCount() == 0) {
             createNewSession();
         }
-
     }
 
     public static IceTermView getInstance(@NotNull Project project) {
         return project.getComponent(IceTermView.class);
     }
 
-    public void openTerminalIn(VirtualFile fileToOpen) {
-        ToolWindow window = ToolWindowManager.getInstance(myProject).getToolWindow(IceTermToolWindowFactory.TOOL_WINDOW_ID);
-        if (window != null && window.isAvailable()) {
-                ((ToolWindowImpl)window).ensureContentInitialized();
-                if (fileToOpen != null) {
-                    if(conEmuControl == null && conEmuControl.getSession() == null) {
-                        try {
-                            this.createNewSession().waitForCompletion();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    ConEmuSession session = conEmuControl.getSession();
-                    String path = fileToOpen.isDirectory() ? fileToOpen.getPath() : fileToOpen.getParent().getPath();
-                    path = path.replace("\"", "\"\"");
-                    session.ExecuteGuiMacroTextSync("Print(@\"cd \"\"" + path + "\"\"\",\"\n\")");
-                    conEmuControl.getParent().requestFocus();
-                    conEmuControl.setFocus();
-                }
+    public void openTerminalIn(VirtualFile fileToOpen, Boolean newTab) {
+        if(fileToOpen == null) {
+            return;
         }
+        ToolWindow window = ToolWindowManager.getInstance(myProject).getToolWindow(IceTermToolWindowFactory.TOOL_WINDOW_ID);
+        if(conEmuControl.getSession() != null) {
+            conEmuStateChangedListener.changeDir(fileToOpen, newTab);
+            return;
+        }
+        initToolWindow(window);
+        conEmuStateChangedListener.setFileToOpen(fileToOpen);
+        window.show(null);
     }
 
-    public Task<States> createNewSession() {
+    public void createNewSession() {
         ToolWindow window = ToolWindowManager.getInstance(myProject).getToolWindow(IceTermToolWindowFactory.TOOL_WINDOW_ID);
-        TaskCompletionSource<States> tasker = new TaskCompletionSource<>();
         if (window != null && window.isAvailable()) {
             createTerminalContent(myToolWindow);
             window.activate(null);
-            conEmuControl.addStateChangedListener(() -> {
-                States state = conEmuControl.getState();
-                if (state == States.ConsoleEmulatorWithConsoleProcess) {
-                    tasker.setResult(state);
-                    Process process = conEmuControl.getSession().getProcess();
-                    ConEmuHook hook = new ConEmuHook();
-                    System.out.println("Setting up native hook hook");
-                    hook.run(WinApi.Helpers.getProcessId(process));
-                    GlobalScreen.addNativeKeyListener(new IceTermKeyListener(conEmuControl));
-                    GlobalScreen.addNativeMouseListener(new IceTermMouseListener(conEmuControl));
-                    GlobalScreen.setEventDispatcher(new SwingDispatchService());
-                }
-                if (state == States.Recycled) {
-                    ToolWindowManager windowManager = ToolWindowManager.getInstance(myProject);
-                    windowManager.invokeLater(() -> {
-                        windowManager.getToolWindow(myToolWindow.getId()).hide(null);
-                        conEmuControl.invalidateSession();
-                        conEmuControl.setStartInfo(new ConEmuStartInfo(myProject));
-                    });
-                }
-            });
         }
-        return tasker.getTask();
     }
 
     private void createTerminalContent(ToolWindowImpl toolWindow) {
@@ -146,6 +114,7 @@ public class IceTermView implements Disposable {
         Color background = iceTermToolWindowPanel.getContent().getParent().getBackground();
         iceTermToolWindowPanel.getContent().setBackground(background);
         conEmuControl.setBackground(background);
+        conEmuControl.addStateChangedListener(conEmuStateChangedListener);
         return conEmuControl;
     }
 
@@ -170,16 +139,16 @@ public class IceTermView implements Disposable {
         myProject.getMessageBus().connect().subscribe(AnActionListener.TOPIC, new AnActionListener() {
             @Override
             public void beforeActionPerformed(@NotNull AnAction action, @NotNull DataContext dataContext, AnActionEvent event) {
-                if(action instanceof ToolWindowViewModeAction) {
+                if (action instanceof ToolWindowViewModeAction) {
                     String activeToolWindowId = myToolWindow.getToolWindowManager().getActiveToolWindowId();
-                    if(activeToolWindowId == null || !activeToolWindowId.equals(myToolWindow.getId())) {
+                    if (activeToolWindowId == null || !activeToolWindowId.equals(myToolWindow.getId())) {
                         return;
                     }
                     try {
                         Field viewMode = action.getClass().getDeclaredField("myMode");
                         viewMode.setAccessible(true);
                         ToolWindowViewModeAction.ViewMode myMode = (ToolWindowViewModeAction.ViewMode) viewMode.get(action);
-                        if(myMode.equals(ToolWindowViewModeAction.ViewMode.Float)) {
+                        if (myMode.equals(ToolWindowViewModeAction.ViewMode.Float)) {
                             saveTempHwnd();
                         }
                     } catch (NoSuchFieldException e) {
@@ -226,8 +195,7 @@ public class IceTermView implements Disposable {
                 if (activeToolWindowId == null || !activeToolWindowId.equals(myToolWindow.getId())) {
                     return;
                 }
-                if(isInToolWindow(mouseEvent.getComponent()))
-                {
+                if (isInToolWindow(mouseEvent.getComponent())) {
                     return;
                 }
                 conEmuControl.removeFocus();
@@ -239,7 +207,7 @@ public class IceTermView implements Disposable {
         Toolkit.getDefaultToolkit().addAWTEventListener(internalEventLostListener, 28L);
     }
 
-    public boolean isInToolWindow(Object component) {
+    private boolean isInToolWindow(Object component) {
         JComponent jsource = component instanceof JComponent ? (JComponent) component : null;
         Component source = component instanceof Component ? (Component) component : null;
         ToolWindow activeToolWindow = this.myToolWindow;
@@ -359,7 +327,4 @@ public class IceTermView implements Disposable {
         return returnValue;
     }
 
-    @Override
-    public void dispose() {
-    }
 }

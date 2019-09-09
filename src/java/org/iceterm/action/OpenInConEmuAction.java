@@ -1,7 +1,5 @@
-// Copyright 2000-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 package org.iceterm.action;
 
-import com.intellij.ide.actions.RevealFileAction;
 import com.intellij.ide.actions.ShowFilePathAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
@@ -12,10 +10,7 @@ import org.iceterm.IceTermView;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * An action that activates the terminal window for file, selected by user.
- */
-public class RevealFileInTerminalAction extends DumbAwareAction {
+public class OpenInConEmuAction extends DumbAwareAction {
   @Override
   public void update(@NotNull AnActionEvent e) {
     Project project = getEventProject(e);
@@ -34,6 +29,6 @@ public class RevealFileInTerminalAction extends DumbAwareAction {
     if (project == null || selectedFile == null) {
       return;
     }
-    IceTermView.getInstance(project).openTerminalIn(selectedFile);
+    IceTermView.getInstance(project).openTerminalIn(selectedFile, false);
   }
 }

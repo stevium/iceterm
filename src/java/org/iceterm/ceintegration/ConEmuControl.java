@@ -47,7 +47,7 @@ public class ConEmuControl extends Canvas {
     @Nullable
     public static ConEmuSession session;
 
-    private List<StateChagedListener> stateChagedListeners = new ArrayList();
+    private List<StateChangedListener> stateChagedListeners = new ArrayList();
     private ConEmuStartInfo _startinfo;
 
     public static void terminate() {
@@ -243,7 +243,7 @@ public class ConEmuControl extends Canvas {
     }
 
     private void stateChanged() {
-        for (StateChagedListener listener :
+        for (StateChangedListener listener :
                 this.stateChagedListeners) {
             listener.stateChanged();
         }
@@ -261,15 +261,15 @@ public class ConEmuControl extends Canvas {
         ToolWindowManager.getInstance(_startinfo.getProject()).activateEditorComponent();
     }
 
-    public interface StateChagedListener extends EventListener {
+    public interface StateChangedListener extends EventListener {
         void stateChanged();
     }
 
-    public void addStateChangedListener(StateChagedListener listener) {
+    public void addStateChangedListener(StateChangedListener listener) {
         this.stateChagedListeners.add(listener);
     }
 
-    public void removeStateChangedListener(StateChagedListener listener) {
+    public void removeStateChangedListener(StateChangedListener listener) {
         this.stateChagedListeners.remove(listener);
     }
 }

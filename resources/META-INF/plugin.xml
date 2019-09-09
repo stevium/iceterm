@@ -43,9 +43,16 @@
   </extensionPoints>
 
   <actions>
-    <action id="Terminal.OpenInIceTerm" class="org.iceterm.action.RevealFileInTerminalAction"
-            text="Open in IceTerm"
+    <action id="Terminal.OpenInConEmu" class="org.iceterm.action.OpenInConEmuAction"
+            text="Open in ConEmu"
             description="Open current file location in ConEmu terminal"
+            icon="/iceterm/OpenTerminal_13x13.svg">
+      <add-to-group group-id="RevealGroup" anchor="last"/>
+      <add-to-group group-id="TouchBarDefault_alt" anchor="last"/>
+    </action>
+    <action id="Terminal.OpenInNewConEmuTab" class="org.iceterm.action.OpenInConEmuTabAction"
+            text="Open in New ConEmu Tab"
+            description="Open current file location in ConEmu terminal and create the new Tab"
             icon="/iceterm/OpenTerminal_13x13.svg">
       <add-to-group group-id="RevealGroup" anchor="last"/>
       <add-to-group group-id="TouchBarDefault_alt" anchor="last"/>
