@@ -1,6 +1,5 @@
 package org.iceterm;
 
-import com.intellij.openapi.wm.impl.IdeFrameImpl;
 import org.iceterm.cehook.mouse.NativeMouseEvent;
 import org.iceterm.cehook.mouse.NativeMouseListener;
 import org.iceterm.ceintegration.ConEmuControl;
@@ -19,7 +18,7 @@ public class IceTermMouseListener implements NativeMouseListener {
 
     @Override
     public void nativeMousePressed(NativeMouseEvent nativeEvent) {
-        conEmuControl.getParent().requestFocus();
+        conEmuControl.setFocus();
     }
 
     @Override

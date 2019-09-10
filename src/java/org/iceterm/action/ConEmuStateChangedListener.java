@@ -79,9 +79,8 @@ public class ConEmuStateChangedListener implements ConEmuControl.StateChangedLis
                session.ExecuteGuiMacroTextSync("Recreate(0)");
             }
             session.ExecuteGuiMacroTextSync("Print(@\"cd \"\"" + path + "\"\"\",\"\n\")");
-            window.show(null);
-            getConEmuControl().getParent().requestFocus();
-            getConEmuControl().setFocus();
+//            window.show(null);
+//            getConEmuControl().setFocus();
         }
     }
 

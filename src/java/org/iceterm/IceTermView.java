@@ -192,7 +192,7 @@ public class IceTermView  {
             if (event.getID() == 501 && conEmuControl.getHandle() != null) {
                 MouseEvent mouseEvent = (MouseEvent) event;
                 String activeToolWindowId = myToolWindow.getToolWindowManager().getActiveToolWindowId();
-                if (activeToolWindowId == null || !activeToolWindowId.equals(myToolWindow.getId())) {
+                if (activeToolWindowId == null) {
                     return;
                 }
                 if (isInToolWindow(mouseEvent.getComponent())) {
@@ -210,16 +210,21 @@ public class IceTermView  {
     private boolean isInToolWindow(Object component) {
         JComponent jsource = component instanceof JComponent ? (JComponent) component : null;
         Component source = component instanceof Component ? (Component) component : null;
-        ToolWindow activeToolWindow = this.myToolWindow;
-        if (activeToolWindow == null) {
+        if (this.myToolWindow == null) {
             return false;
         } else {
-            JComponent activeToolWindowComponent = activeToolWindow.getComponent();
-            if (activeToolWindowComponent != null) {
-                while (source != null && source != activeToolWindowComponent) {
+            Component toolWindowComponent = this.myToolWindow.getComponent();
+            JFrame ideRootFrame = (JFrame) IdeFrameImpl.getFrames()[1];
+            JComponent  rootPane = ((JComponent) toolWindowComponent).getRootPane();
+            if(ideRootFrame.getRootPane() != rootPane && rootPane != null) {
+                toolWindowComponent = rootPane.getParent();
+            }
+
+            if (toolWindowComponent != null) {
+                while (source != null && source != toolWindowComponent) {
                     source = source.getParent();
                 }
-                while (jsource != null && jsource != activeToolWindowComponent) {
+                while (jsource != null && jsource != toolWindowComponent) {
                     jsource = jsource.getParent() != null && jsource.getParent() instanceof JComponent ? (JComponent) jsource.getParent() : null;
                 }
             }

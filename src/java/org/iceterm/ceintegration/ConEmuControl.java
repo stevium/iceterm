@@ -1,16 +1,17 @@
 package org.iceterm.ceintegration;
 
 import com.intellij.openapi.wm.ToolWindowManager;
+import com.intellij.openapi.wm.impl.IdeFrameImpl;
 import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.Kernel32;
 import com.sun.jna.platform.win32.WinDef;
 import com.sun.jna.platform.win32.WinDef.HWND;
 import com.sun.jna.platform.win32.WinUser.WNDENUMPROC;
+import org.apache.commons.lang.NullArgumentException;
 import org.iceterm.util.User32Ext;
 import org.iceterm.util.WinApi;
 import org.iceterm.util.tasks.Continuation;
 import org.iceterm.util.tasks.Task;
-import org.apache.commons.lang.NullArgumentException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -84,8 +85,19 @@ public class ConEmuControl extends Canvas {
     }
 
     public GuiMacroResult setFocus() {
-        if(session != null)
-            return session.ExecuteGuiMacroTextSync("FocusConEmu");
+        if(session != null) {
+            JComponent parent = (JComponent) getParent();
+            Container parentFrame = parent.getRootPane().getParent();
+            int appThread = Kernel32.INSTANCE.GetCurrentThreadId();
+            WinDef.HWND rootHwnd = new WinDef.HWND(getComponentPointer(parentFrame));
+            int foregroundThread = User32Ext.INSTANCE.GetWindowThreadProcessId(rootHwnd, null);
+            User32Ext.INSTANCE.AttachThreadInput(foregroundThread, appThread, true);
+            User32Ext.INSTANCE.SetFocus(rootHwnd);
+            User32Ext.INSTANCE.AttachThreadInput(foregroundThread, appThread, false);
+            GuiMacroResult focusConEmu = session.ExecuteGuiMacroTextSync("FocusConEmu");
+            parent.requestFocus();
+            return focusConEmu;
+        }
         return null;
     }
 
@@ -251,12 +263,13 @@ public class ConEmuControl extends Canvas {
 
     public void removeFocus() {
         int appThread = Kernel32.INSTANCE.GetCurrentThreadId();
-        WinDef.HWND hwnd = new WinDef.HWND(getComponentPointer(((JComponent)this.getParent()).getRootPane().getParent()));
-        int foregroundThread = User32Ext.INSTANCE.GetWindowThreadProcessId(hwnd, null);
+        JFrame rootFrame = (JFrame) IdeFrameImpl.getFrames()[1];
+        WinDef.HWND rootHwnd = new WinDef.HWND(getComponentPointer(rootFrame));
+        int foregroundThread = User32Ext.INSTANCE.GetWindowThreadProcessId(rootHwnd, null);
         User32Ext.INSTANCE.AttachThreadInput(foregroundThread, appThread, true);
         User32Ext.INSTANCE.SetForegroundWindow(this.getHandle());
-        User32Ext.INSTANCE.SetForegroundWindow(hwnd);
-        User32Ext.INSTANCE.SetFocus(hwnd);
+        User32Ext.INSTANCE.SetForegroundWindow(rootHwnd);
+        User32Ext.INSTANCE.SetFocus(rootHwnd);
         User32Ext.INSTANCE.AttachThreadInput(foregroundThread, appThread, false);
         ToolWindowManager.getInstance(_startinfo.getProject()).activateEditorComponent();
     }
