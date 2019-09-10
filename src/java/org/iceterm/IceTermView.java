@@ -77,7 +77,7 @@ public class IceTermView  {
             return;
         }
         ToolWindow window = ToolWindowManager.getInstance(myProject).getToolWindow(IceTermToolWindowFactory.TOOL_WINDOW_ID);
-        if(conEmuControl.getSession() != null) {
+        if(conEmuControl != null && conEmuControl.getSession() != null) {
             conEmuStateChangedListener.changeDir(fileToOpen, newTab);
             return;
         }
