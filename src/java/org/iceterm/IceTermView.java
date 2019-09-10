@@ -16,6 +16,7 @@ import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import com.intellij.ui.content.ContentManager;
 import com.intellij.util.containers.hash.HashMap;
+import org.apache.commons.lang.StringUtils;
 import org.iceterm.action.ConEmuStateChangedListener;
 import org.iceterm.ceintegration.ConEmuControl;
 import org.iceterm.ceintegration.ConEmuStartInfo;
@@ -24,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import static com.sun.jna.Native.getComponentPointer;
 
 import javax.swing.*;
+import javax.tools.Tool;
 import java.awt.*;
 import java.awt.event.AWTEventListener;
 import java.awt.event.FocusEvent;
@@ -92,6 +94,19 @@ public class IceTermView  {
             createTerminalContent(myToolWindow);
             window.activate(null);
         }
+    }
+
+    public JFrame getMainFrame() {
+        Frame[] frames = IdeFrameImpl.getFrames();
+        for(int i = 0; i < frames.length; i++) {
+            if (frames[i] instanceof JFrame && frames[i] instanceof IdeFrameImpl) {
+                IdeFrameImpl frame = (IdeFrameImpl) frames[i];
+                if(StringUtils.equals(frame.getProject().getName(), myProject.getName()))
+                    return frame;
+
+            }
+        }
+        return null;
     }
 
     private void createTerminalContent(ToolWindowImpl toolWindow) {
@@ -189,7 +204,7 @@ public class IceTermView  {
                 }
             }
 
-            if (event.getID() == 501 && conEmuControl.getHandle() != null) {
+            if (event.getID() == 501 && conEmuControl.isForeground()) {
                 MouseEvent mouseEvent = (MouseEvent) event;
                 String activeToolWindowId = myToolWindow.getToolWindowManager().getActiveToolWindowId();
                 if (activeToolWindowId == null) {
@@ -204,32 +219,33 @@ public class IceTermView  {
         AWTEventListener internalEventLostListener = Toolkit.getDefaultToolkit().getAWTEventListeners()[2];
         Toolkit.getDefaultToolkit().removeAWTEventListener(internalEventLostListener);
         Toolkit.getDefaultToolkit().addAWTEventListener(listener, 28L);
-        Toolkit.getDefaultToolkit().addAWTEventListener(internalEventLostListener, 28L);
+        Toolkit.getDefaultToolkit().addAWTEventListener(internalEventLostListener, AWTEvent.FOCUS_EVENT_MASK);
     }
 
-    private boolean isInToolWindow(Object component) {
-        JComponent jsource = component instanceof JComponent ? (JComponent) component : null;
+private boolean isInToolWindow(Object component) {
         Component source = component instanceof Component ? (Component) component : null;
-        if (this.myToolWindow == null) {
+        if (source == null || !(source.getParent() instanceof JComponent)) {
             return false;
         } else {
-            Component toolWindowComponent = this.myToolWindow.getComponent();
-            JFrame ideRootFrame = (JFrame) IdeFrameImpl.getFrames()[1];
-            JComponent  rootPane = ((JComponent) toolWindowComponent).getRootPane();
-            if(ideRootFrame.getRootPane() != rootPane && rootPane != null) {
-                toolWindowComponent = rootPane.getParent();
+            Component myToolWindow = this.myToolWindow.getComponent();
+            JComponent sourceRootPane = ((JComponent) source.getParent()).getRootPane();
+            JComponent  myToolWindowRootPane = ((JComponent) myToolWindow).getRootPane();
+
+            if(sourceRootPane != myToolWindowRootPane && myToolWindowRootPane != null) {
+                myToolWindow = myToolWindowRootPane.getParent();
             }
 
-            if (toolWindowComponent != null) {
-                while (source != null && source != toolWindowComponent) {
+            if (myToolWindow != null) {
+                while (source != null && source != myToolWindow) {
                     source = source.getParent();
                 }
-                while (jsource != null && jsource != toolWindowComponent) {
-                    jsource = jsource.getParent() != null && jsource.getParent() instanceof JComponent ? (JComponent) jsource.getParent() : null;
-                }
+//                while (jsource != null && jsource != toolWindowComponent) {
+//                    jsource = jsource.getParent() != null && jsource.getParent() instanceof JComponent ? (JComponent) jsource.getParent() : null;
+//                }
             }
 
-            return source != null || jsource != null;
+//            return source != null || jsource != null;
+            return source != null;
         }
     }
 

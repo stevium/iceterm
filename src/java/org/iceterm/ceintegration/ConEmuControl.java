@@ -8,6 +8,7 @@ import com.sun.jna.platform.win32.WinDef;
 import com.sun.jna.platform.win32.WinDef.HWND;
 import com.sun.jna.platform.win32.WinUser.WNDENUMPROC;
 import org.apache.commons.lang.NullArgumentException;
+import org.iceterm.IceTermView;
 import org.iceterm.util.User32Ext;
 import org.iceterm.util.WinApi;
 import org.iceterm.util.tasks.Continuation;
@@ -46,12 +47,12 @@ public class ConEmuControl extends Canvas {
      * The running session, if currently running.
      */
     @Nullable
-    public static ConEmuSession session;
+    private ConEmuSession session;
 
     private List<StateChangedListener> stateChagedListeners = new ArrayList();
-    private ConEmuStartInfo _startinfo;
+    private ConEmuStartInfo startinfo;
 
-    public static void terminate() {
+    public void terminate() {
         if(session != null) {
             session.close();
         }
@@ -68,7 +69,7 @@ public class ConEmuControl extends Canvas {
         this.setFocusable(true);
         this.setEnabled(true);
         this.setFocusTraversalKeysEnabled(true);
-        this._startinfo = startinfo;
+        this.startinfo = startinfo;
     }
 
     FocusAdapter focusGained = new FocusAdapter() {
@@ -84,7 +85,7 @@ public class ConEmuControl extends Canvas {
         return null;
     }
 
-    public GuiMacroResult setFocus() {
+    public void setFocus() {
         if(session != null) {
             JComponent parent = (JComponent) getParent();
             Container parentFrame = parent.getRootPane().getParent();
@@ -94,11 +95,21 @@ public class ConEmuControl extends Canvas {
             User32Ext.INSTANCE.AttachThreadInput(foregroundThread, appThread, true);
             User32Ext.INSTANCE.SetFocus(rootHwnd);
             User32Ext.INSTANCE.AttachThreadInput(foregroundThread, appThread, false);
-            GuiMacroResult focusConEmu = session.ExecuteGuiMacroTextSync("FocusConEmu");
             parent.requestFocus();
-            return focusConEmu;
+            GuiMacroResult focusConEmu = session.ExecuteGuiMacroTextSync("FocusConEmu");
         }
-        return null;
+    }
+
+    public void removeFocus() {
+        int appThread = Kernel32.INSTANCE.GetCurrentThreadId();
+        WinDef.HWND ideHwnd = new WinDef.HWND(getComponentPointer(IceTermView.getInstance(startinfo.getProject()).getMainFrame()));
+        int foregroundThread = User32Ext.INSTANCE.GetWindowThreadProcessId(ideHwnd, null);
+        User32Ext.INSTANCE.AttachThreadInput(foregroundThread, appThread, true);
+        User32Ext.INSTANCE.SetForegroundWindow(this.getHandle());
+        User32Ext.INSTANCE.SetForegroundWindow(ideHwnd);
+        User32Ext.INSTANCE.SetFocus(ideHwnd);
+        User32Ext.INSTANCE.AttachThreadInput(foregroundThread, appThread, false);
+        ToolWindowManager.getInstance(startinfo.getProject()).activateEditorComponent();
     }
 
     public void resetParentHWND() {
@@ -109,7 +120,7 @@ public class ConEmuControl extends Canvas {
     public void paint(Graphics g) {
         super.paint(g);
         if(session == null) {
-            createSession(this._startinfo);
+            createSession(this.startinfo);
         } else {
             this.resetParentHWND();
         }
@@ -120,7 +131,7 @@ public class ConEmuControl extends Canvas {
     }
 
     public void setStartInfo(ConEmuStartInfo _startinfo) {
-        this._startinfo = _startinfo;
+        this.startinfo = _startinfo;
     }
 
     public void createSession(ConEmuStartInfo startinfo) {
@@ -261,19 +272,6 @@ public class ConEmuControl extends Canvas {
         }
     }
 
-    public void removeFocus() {
-        int appThread = Kernel32.INSTANCE.GetCurrentThreadId();
-        JFrame rootFrame = (JFrame) IdeFrameImpl.getFrames()[1];
-        WinDef.HWND rootHwnd = new WinDef.HWND(getComponentPointer(rootFrame));
-        int foregroundThread = User32Ext.INSTANCE.GetWindowThreadProcessId(rootHwnd, null);
-        User32Ext.INSTANCE.AttachThreadInput(foregroundThread, appThread, true);
-        User32Ext.INSTANCE.SetForegroundWindow(this.getHandle());
-        User32Ext.INSTANCE.SetForegroundWindow(rootHwnd);
-        User32Ext.INSTANCE.SetFocus(rootHwnd);
-        User32Ext.INSTANCE.AttachThreadInput(foregroundThread, appThread, false);
-        ToolWindowManager.getInstance(_startinfo.getProject()).activateEditorComponent();
-    }
-
     public interface StateChangedListener extends EventListener {
         void stateChanged();
     }
@@ -284,5 +282,15 @@ public class ConEmuControl extends Canvas {
 
     public void removeStateChangedListener(StateChangedListener listener) {
         this.stateChagedListeners.remove(listener);
+    }
+
+    public boolean isForeground()  {
+        if(getHandle() == null)
+            return false;
+        IceTermView iceTermView = IceTermView.getInstance(startinfo.getProject());
+        HWND hwnd = new HWND(getComponentPointer(iceTermView.getMainFrame()));
+        WinDef.HWND conemuWindow = getHandle();
+        WinDef.HWND foregroundWindow = User32Ext.INSTANCE.GetForegroundWindow();
+        return hwnd.equals(foregroundWindow) || conemuWindow.equals(foregroundWindow);
     }
 }
