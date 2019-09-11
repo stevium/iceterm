@@ -16,7 +16,6 @@ public class IceTermToolWindow implements Disposable {
         Disposer.register(this, () -> {
             ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
             Disposer.dispose((ToolWindowImpl)toolWindowManager.getToolWindow(IceTermToolWindowFactory.TOOL_WINDOW_ID));
-//            toolWindowManager.unregisterToolWindow();
             myToolWindowContent = null;
         });
     }

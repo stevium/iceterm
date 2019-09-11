@@ -12,9 +12,6 @@ import java.io.File
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KProperty
 
-/**
- * @author traff
- */
 @State(name = "IceTermProjectOptionsProvider", storages = [(Storage("plugin.xml"))])
 class IceTermProjectOptionsProvider(val project: Project) : PersistentStateComponent<IceTermProjectOptionsProvider.State> {
 
@@ -58,27 +55,6 @@ class IceTermProjectOptionsProvider(val project: Project) : PersistentStateCompo
         val dir = if (roots.size == 1 && roots[0] != null && roots[0].isDirectory) roots[0] else project.baseDir
         return dir?.canonicalPath
     }
-
-//    val defaultShellPath: String
-//        get() {
-//            val shell = System.getenv("SHELL")
-//
-//            if (shell != null && File(shell).canExecute()) {
-//                return shell
-//            }
-//
-//            if (SystemInfo.isUnix) {
-//                if (File("/bin/bash").exists()) {
-//                    return "/bin/bash"
-//                }
-//                else {
-//                    return "/bin/sh"
-//                }
-//            }
-//            else {
-//                return "cmd.exe"
-//            }
-//        }
 
     companion object {
         private val LOG = Logger.getInstance(IceTermProjectOptionsProvider::class.java)
