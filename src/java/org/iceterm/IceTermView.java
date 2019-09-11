@@ -228,23 +228,21 @@ private boolean isInToolWindow(Object component) {
             return false;
         } else {
             Component myToolWindow = this.myToolWindow.getComponent();
-            JComponent sourceRootPane = ((JComponent) source.getParent()).getRootPane();
-            JComponent  myToolWindowRootPane = ((JComponent) myToolWindow).getRootPane();
 
-            if(sourceRootPane != myToolWindowRootPane && myToolWindowRootPane != null) {
-                myToolWindow = myToolWindowRootPane.getParent();
-            }
+            if(((JComponent) myToolWindow).getRootPane() == null)
+                return false;
+
+            Container  myToolWindowRoot = ((JComponent) myToolWindow).getRootPane().getParent();
+
+            if(myToolWindowRoot != getMainFrame())
+                return false;
 
             if (myToolWindow != null) {
                 while (source != null && source != myToolWindow) {
                     source = source.getParent();
                 }
-//                while (jsource != null && jsource != toolWindowComponent) {
-//                    jsource = jsource.getParent() != null && jsource.getParent() instanceof JComponent ? (JComponent) jsource.getParent() : null;
-//                }
             }
 
-//            return source != null || jsource != null;
             return source != null;
         }
     }
