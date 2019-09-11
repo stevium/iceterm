@@ -1,6 +1,6 @@
 <idea-plugin>
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow id="IceTerm" secondary="true" icon="/iceterm/conemu_13x13.svg" anchor="right"
+        <toolWindow id="IdeaConEmu" secondary="true" icon="/iceterm/conemu_13x13.svg" anchor="right"
                     factoryClass="org.iceterm.IceTermToolWindowFactory"/>
     </extensions>
 

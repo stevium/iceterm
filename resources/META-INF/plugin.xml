@@ -19,7 +19,7 @@
   <extensions defaultExtensionNs="com.intellij">
     <postStartupActivity implementation="org.iceterm.IceTermPostStartupActivity"/>
 
-    <toolWindow id="IceTerm" secondary="true" icon="/iceterm/conemu_13x13.svg" anchor="right"
+    <toolWindow id="IdeaConEmu" secondary="true" icon="/iceterm/conemu_13x13.svg" anchor="right"
                 factoryClass="org.iceterm.IceTermToolWindowFactory"/>
 
     <projectConfigurable groupId="tools" groupWeight="130" displayName="IceTerm" id="iceterm"
