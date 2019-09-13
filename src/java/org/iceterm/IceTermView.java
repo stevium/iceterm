@@ -25,7 +25,6 @@ import org.jetbrains.annotations.NotNull;
 import static com.sun.jna.Native.getComponentPointer;
 
 import javax.swing.*;
-import javax.tools.Tool;
 import java.awt.*;
 import java.awt.event.AWTEventListener;
 import java.awt.event.FocusEvent;
@@ -46,7 +45,7 @@ public class IceTermView  {
     }
 
     private ConEmuControl conEmuControl;
-    private Panel tempBackup;
+    private Panel hiddenHandle;
     private JFrame frame;
     private WindowInfoImpl windowInfo;
     private Map<String, WindowInfoImpl> mySameDockWindows = new HashMap<>();
@@ -101,8 +100,12 @@ public class IceTermView  {
         for(int i = 0; i < frames.length; i++) {
             if (frames[i] instanceof JFrame && frames[i] instanceof IdeFrameImpl) {
                 IdeFrameImpl frame = (IdeFrameImpl) frames[i];
-                if(StringUtils.equals(frame.getProject().getName(), myProject.getName()))
+                if(frame.getProject() == null) {
+                    continue;
+                }
+                if(StringUtils.equals(frame.getProject().getName(), myProject.getName())) {
                     return frame;
+                }
 
             }
         }
@@ -235,7 +238,7 @@ private boolean isInToolWindow(Object component) {
             Container  myToolWindowRoot = ((JComponent) myToolWindow).getRootPane().getParent();
 
             if(myToolWindowRoot != getMainFrame())
-                return false;
+                myToolWindow = myToolWindowRoot;
 
             if (myToolWindow != null) {
                 while (source != null && source != myToolWindow) {
@@ -324,13 +327,15 @@ private boolean isInToolWindow(Object component) {
                     }
                 }
                 if (frame != null) {
-                    tempBackup = new Panel();
-                    tempBackup.setVisible(false);
-                    tempBackup.setLocation(400, 400);
-                    frame.add(tempBackup, BorderLayout.CENTER);
+                    hiddenHandle = new Panel();
+                    hiddenHandle.setVisible(false);
+                    hiddenHandle.setLocation(400, 400);
+                    frame.add(hiddenHandle, BorderLayout.CENTER);
                 }
             }
-            conEmuControl.setParentHWND(getComponentPointer(tempBackup));
+            if(hiddenHandle != null) {
+                conEmuControl.setParentHWND(getComponentPointer(hiddenHandle));
+            }
         }
     }
 

@@ -288,9 +288,27 @@ public class ConEmuControl extends Canvas {
         if(getHandle() == null)
             return false;
         IceTermView iceTermView = IceTermView.getInstance(startinfo.getProject());
-        HWND hwnd = new HWND(getComponentPointer(iceTermView.getMainFrame()));
-        WinDef.HWND conemuWindow = getHandle();
-        WinDef.HWND foregroundWindow = User32Ext.INSTANCE.GetForegroundWindow();
-        return hwnd.equals(foregroundWindow) || conemuWindow.equals(foregroundWindow);
+        HWND mainWindow = new HWND(getComponentPointer(iceTermView.getMainFrame()));
+        WinDef.HWND foregroundHwnd = User32Ext.INSTANCE.GetForegroundWindow();
+        if(mainWindow.equals(foregroundHwnd)) {
+            return true;
+        }
+
+        WinDef.HWND conemuHwnd = getHandle();
+        if(conemuHwnd.equals(foregroundHwnd)) {
+            return true;
+        }
+
+        if (!(getParent() instanceof JComponent)) {
+            return false;
+        }
+
+        JRootPane conemuRootPane = ((JComponent) getParent()).getRootPane();
+        if(conemuRootPane == null) {
+            return false;
+        }
+        WinDef.HWND conemuRootHwnd = new HWND(getComponentPointer(conemuRootPane.getParent()));
+
+        return conemuRootHwnd.equals(foregroundHwnd);
     }
 }
