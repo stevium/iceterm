@@ -33,12 +33,13 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Map;
 
-public class IceTermView  {
+public class IceTermView {
 
     private IceTermToolWindow iceTermToolWindowPanel;
     private Project myProject;
     private ToolWindowImpl myToolWindow;
     private ConEmuStateChangedListener conEmuStateChangedListener;
+    private boolean focusing;
 
     public ConEmuControl getConEmuControl() {
         return conEmuControl;
@@ -74,12 +75,14 @@ public class IceTermView  {
     }
 
     public void openTerminalIn(VirtualFile fileToOpen, Boolean newTab) {
-        if(fileToOpen == null) {
+        if (fileToOpen == null) {
             return;
         }
         ToolWindow window = ToolWindowManager.getInstance(myProject).getToolWindow(IceTermToolWindowFactory.TOOL_WINDOW_ID);
-        if(conEmuControl != null && conEmuControl.getSession() != null) {
+        if (conEmuControl != null && conEmuControl.getSession() != null) {
             conEmuStateChangedListener.changeDir(fileToOpen, newTab);
+            window.show(null);
+            conEmuControl.requestFocus();
             return;
         }
         initToolWindow(window);
@@ -97,13 +100,13 @@ public class IceTermView  {
 
     public JFrame getMainFrame() {
         Frame[] frames = IdeFrameImpl.getFrames();
-        for(int i = 0; i < frames.length; i++) {
+        for (int i = 0; i < frames.length; i++) {
             if (frames[i] instanceof JFrame && frames[i] instanceof IdeFrameImpl) {
                 IdeFrameImpl frame = (IdeFrameImpl) frames[i];
-                if(frame.getProject() == null) {
+                if (frame.getProject() == null) {
                     continue;
                 }
-                if(StringUtils.equals(frame.getProject().getName(), myProject.getName())) {
+                if (StringUtils.equals(frame.getProject().getName(), myProject.getName())) {
                     return frame;
                 }
 
@@ -197,7 +200,8 @@ public class IceTermView  {
                 if (isInToolWindow(focusEvent.getSource())) {
                     Thread t = new Thread(() -> {
                         try {
-                            Thread.sleep(20);
+                            Thread.sleep(10);
+                            System.out.println("Settings Focus from 1004");
                             conEmuControl.setFocus();
                         } catch (InterruptedException e) {
                             e.printStackTrace();
@@ -225,29 +229,35 @@ public class IceTermView  {
         Toolkit.getDefaultToolkit().addAWTEventListener(internalEventLostListener, AWTEvent.FOCUS_EVENT_MASK);
     }
 
-private boolean isInToolWindow(Object component) {
+    private boolean isInToolWindow(Object component) {
         Component source = component instanceof Component ? (Component) component : null;
-        if (source == null || !(source.getParent() instanceof JComponent)) {
+
+        if (source == null) {
             return false;
-        } else {
-            Component myToolWindow = this.myToolWindow.getComponent();
-
-            if(((JComponent) myToolWindow).getRootPane() == null)
-                return false;
-
-            Container  myToolWindowRoot = ((JComponent) myToolWindow).getRootPane().getParent();
-
-            if(myToolWindowRoot != getMainFrame())
-                myToolWindow = myToolWindowRoot;
-
-            if (myToolWindow != null) {
-                while (source != null && source != myToolWindow) {
-                    source = source.getParent();
-                }
-            }
-
-            return source != null;
         }
+
+        Component myToolWindow = this.myToolWindow.getComponent();
+
+        if (((JComponent) myToolWindow).getRootPane() == null)
+            return false;
+
+        JFrame mainFrame = getMainFrame();
+        Container myToolWindowRoot = ((JComponent) myToolWindow).getRootPane().getParent();
+
+        if (source instanceof JFrame && source != mainFrame) {
+            return source == myToolWindowRoot;
+        }
+
+        if (myToolWindowRoot != mainFrame)
+            myToolWindow = myToolWindowRoot;
+
+        if (myToolWindow != null) {
+            while (source != null && source != myToolWindow) {
+                source = source.getParent();
+            }
+        }
+
+        return source != null;
     }
 
     private ToolWindowType getToolWindowType() {
@@ -333,7 +343,7 @@ private boolean isInToolWindow(Object component) {
                     frame.add(hiddenHandle, BorderLayout.CENTER);
                 }
             }
-            if(hiddenHandle != null) {
+            if (hiddenHandle != null) {
                 conEmuControl.setParentHWND(getComponentPointer(hiddenHandle));
             }
         }

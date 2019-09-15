@@ -42,6 +42,15 @@ public class ConEmuStateChangedListener implements ConEmuControl.StateChangedLis
                 changeDir(fileToOpen, false);
                 fileToOpen = null;
             }
+            Thread t = new Thread(() -> {
+                try {
+                    Thread.sleep(800);
+                    conEmuControl.requestFocus();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            });
+            t.start();
         }
         if (state == States.Recycled) {
             disposeSession(window);
