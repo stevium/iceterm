@@ -89,10 +89,7 @@ public class ConEmuControl extends Canvas {
 
     public void setFocus() {
         if(session != null) {
-            JComponent parent = (JComponent) getParent();
-            Container parentFrame = parent.getRootPane().getParent();
-            parentFrame.setVisible(true);
-            session.ExecuteGuiMacroTextSync("FocusConEmu");
+            session.ExecuteGuiMacroTextSync("SetFocus");
         }
     }
 
