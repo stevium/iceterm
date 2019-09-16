@@ -14,6 +14,6 @@ IdeaConEmu Terminal integration, which provides a way to run ConEmu as a tool wi
 
 ### Application Settings:
 
-* **ConEmu executable path** - path to ConEmu - currently only works with default exe
+* **ConEmu executable path** - path to ConEmu - currently only works with version shipped with the plugin
 * **Start Task** - a predefined task, or a command to run on Startup - **{cmd}** by default
 * **Escape key** - a key used to switch focus back to IDE - **ESC** by default
