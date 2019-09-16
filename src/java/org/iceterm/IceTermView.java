@@ -200,7 +200,7 @@ public class IceTermView {
                 if (isInToolWindow(focusEvent.getSource())) {
                     Thread t = new Thread(() -> {
                         try {
-                            Thread.sleep(10);
+                            Thread.sleep(20);
                             System.out.println("Settings Focus from 1004");
                             conEmuControl.setFocus();
                         } catch (InterruptedException e) {
