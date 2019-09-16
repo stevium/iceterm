@@ -1,7 +1,7 @@
 <idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
   <id>org.jetbrains.plugins.iceterm</id>
   <name>IceTerm</name>
-  <version>0.0.1-beta</version>
+  <version>0.0.2-beta</version>
   <vendor email="milos@mstevanovic.net" url="http://www.stevium.com">Stevium</vendor>
   <description><![CDATA[
       Embedded ConEmu Terminal
