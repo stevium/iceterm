@@ -198,11 +198,14 @@ public class IceTermView {
             if (event.getID() == 1004) {
                 FocusEvent focusEvent = (FocusEvent) event;
                 if (isInToolWindow(focusEvent.getSource())) {
-                    JComponent parent = (JComponent) conEmuControl.getParent();
-                    parent.getRootPane().getParent().setVisible(true);
+                    ToolWindowManager windowManager = ToolWindowManager.getInstance(myProject);
+                    windowManager.invokeLater(() -> {
+                            JComponent parent = (JComponent) conEmuControl.getParent();
+                            parent.getRootPane().getParent().setVisible(true);
+                    });
                     Thread t = new Thread(() -> {
                         try {
-                            Thread.sleep(20);
+                            Thread.sleep(100);
                             System.out.println("Settings Focus from 1004");
                             conEmuControl.setFocus();
                         } catch (InterruptedException e) {
