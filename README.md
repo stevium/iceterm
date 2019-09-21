@@ -1,6 +1,6 @@
 # IceTerm 
 
-IdeaConEmu Terminal integration, which provides a way to run ConEmu as a tool window inside JetBrains family of IDEs.
+[IdeaConEmuTerminal](https://plugins.jetbrains.com/plugin/13014-iceterm) is a plugin for integrating ConEmu as a tool window inside IntelliJ platform based IDEs.
 
 ### Available commands:
 
