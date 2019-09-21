@@ -1,6 +1,6 @@
 # IceTerm 
 
-[IdeaConEmuTerminal](https://plugins.jetbrains.com/plugin/13014-iceterm) is a plugin for integrating ConEmu as a tool window inside IntelliJ platform based IDEs.
+[IdeaConEmuTerminal](https://plugins.jetbrains.com/plugin/13014-iceterm) is a plugin for integrating [ConEmu](https://conemu.github.io) as a tool window inside IntelliJ platform based IDEs.
 
 ### Available commands:
 
