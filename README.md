@@ -4,7 +4,7 @@
 
 ### Available commands:
 
-* **IdeaConEmu Terminal** - toggles tool window
+* **IceTerm** - toggles tool window
 * **Open in ConEmu** - opens ConEmu in selected file/folder
 * **Open in new ConEmu Tab** - opens new tab in selected file/folder
 

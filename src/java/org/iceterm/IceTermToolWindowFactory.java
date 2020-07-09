@@ -6,7 +6,7 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
 
 public class IceTermToolWindowFactory implements ToolWindowFactory, DumbAware {
-    public static final String TOOL_WINDOW_ID = "IdeaConEmu Terminal";
+    public static final String TOOL_WINDOW_ID = "IceTerm";
 
     public void createToolWindowContent(Project project, ToolWindow toolWindow) {
         IceTermView terminalView = IceTermView.getInstance(project);
