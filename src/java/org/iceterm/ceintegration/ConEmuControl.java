@@ -1,7 +1,6 @@
 package org.iceterm.ceintegration;
 
 import com.intellij.openapi.wm.ToolWindowManager;
-import com.intellij.openapi.wm.impl.IdeFrameImpl;
 import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.Kernel32;
 import com.sun.jna.platform.win32.WinDef;
@@ -11,8 +10,6 @@ import org.apache.commons.lang.NullArgumentException;
 import org.iceterm.IceTermView;
 import org.iceterm.util.User32Ext;
 import org.iceterm.util.WinApi;
-import org.iceterm.util.tasks.Continuation;
-import org.iceterm.util.tasks.Task;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,6 +20,7 @@ import java.awt.event.FocusEvent;
 import java.util.ArrayList;
 import java.util.EventListener;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static com.sun.jna.Native.getComponentPointer;
 
@@ -31,6 +29,10 @@ import static com.sun.jna.Native.getComponentPointer;
  * <p>The control can be used to run a console process in the console emulator. The console process is the single command executed in the control, which could be a simple executable (the console emulator is not usable after it exits), or an interactive shell like <code>cmd</code> or <code>powershell</code> or <code>bash</code>, which in turn can execute multiple commands, either buy user input or programmatically with {@link ConEmuSession#writeInputText(String)}. The console emulator is what implements the console and renders the console view in the control. A new console emulator (represented by a {@link #getRunningSession()} is {@link #Start(ConEmuStartInfo)}  started} for each console process. After the root console process terminates, the console emulator might remain open {@link ConEmuStartInfo#getConsoleProcessCommandLine()} and still present the console window, or get closed. After the console emulator exits, the control is blank until {@link #Start(ConEmuStartInfo)} spawns a new console emulator process in it. You cannot run more than one console emulator (console process) simultaneously.</p>
  */
 public class ConEmuControl extends Canvas {
+
+    private final List<StateChangedListener> stateChagedListeners = new ArrayList();
+    private final List<ControlRemovedListener> controlRemovedListener = new ArrayList();
+
     /**
      * Enabled by default, and with all default values (runs the cmd shell).
      */
@@ -49,7 +51,6 @@ public class ConEmuControl extends Canvas {
     @Nullable
     private ConEmuSession session;
 
-    private List<StateChangedListener> stateChagedListeners = new ArrayList();
     private ConEmuStartInfo startinfo;
 
     public void terminate() {
@@ -217,20 +218,17 @@ public class ConEmuControl extends Canvas {
         // Spawn session
         session = new ConEmuSession(startinfo, new ConEmuSession.HostContext(getHandle(), getIsStatusbarVisible()));
         stateChanged();
-        session.waitForConsoleEmulatorCloseAsync().continueWith(new Continuation() {
-            @Override
-            public Object then(Task task) throws Exception {
-                try {
-                    _nLastExitCode = session.getConsoleProcessExitCode();
-                }
-                catch (Exception ex)
-                {
-                    // NOP
-                }
-                session = null;
-                stateChanged();
-                return _nLastExitCode;
+        session.waitForConsoleEmulatorCloseAsync().continueWith(task -> {
+            try {
+                _nLastExitCode = session.getConsoleProcessExitCode();
             }
+            catch (Exception ex)
+            {
+                // NOP
+            }
+            session = null;
+            stateChanged();
+            return _nLastExitCode;
         });
         return session;
     }
@@ -259,7 +257,6 @@ public class ConEmuControl extends Canvas {
         } catch (Exception e) {
             return null;
         }
-//        return new HWND(Pointer.createConstant(((WComponentPeer) this.getPeer()).getHWnd()));
     }
 
     private void stateChanged() {
@@ -279,6 +276,18 @@ public class ConEmuControl extends Canvas {
 
     public void removeStateChangedListener(StateChangedListener listener) {
         this.stateChagedListeners.remove(listener);
+    }
+
+    public interface ControlRemovedListener extends EventListener {
+        void onRemoved();
+    }
+
+    public void addControlRemovedListener(ControlRemovedListener listener) {
+        this.controlRemovedListener.add(listener);
+    }
+
+    public void removeControlRemovedListener(StateChangedListener listener) {
+        this.controlRemovedListener.remove(listener);
     }
 
     public boolean isForeground()  {
@@ -314,5 +323,16 @@ public class ConEmuControl extends Canvas {
         }
 
         return conemuRootHwnd.equals(foregroundHwnd);
+    }
+
+    @Override
+    public void removeNotify() {
+        this.controlRemovedListener.forEach(new Consumer<ControlRemovedListener>() {
+            @Override
+            public void accept(ControlRemovedListener controlRemovedListener) {
+                controlRemovedListener.onRemoved();
+            }
+        });
+        super.removeNotify();
     }
 }

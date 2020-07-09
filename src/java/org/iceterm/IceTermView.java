@@ -1,21 +1,13 @@
 package org.iceterm;
 
-import com.intellij.ide.actions.ToolWindowViewModeAction;
-import com.intellij.openapi.actionSystem.AnAction;
-import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.DataContext;
-import com.intellij.openapi.actionSystem.ex.AnActionListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.wm.ToolWindow;
-import com.intellij.openapi.wm.ToolWindowManager;
-import com.intellij.openapi.wm.ToolWindowType;
-import com.intellij.openapi.wm.ex.ToolWindowManagerListener;
+import com.intellij.openapi.wm.*;
 import com.intellij.openapi.wm.impl.*;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import com.intellij.ui.content.ContentManager;
-import com.intellij.util.containers.hash.HashMap;
+import com.sun.jna.Pointer;
 import org.apache.commons.lang.StringUtils;
 import org.iceterm.action.ConEmuStateChangedListener;
 import org.iceterm.ceintegration.ConEmuControl;
@@ -30,16 +22,13 @@ import java.awt.event.AWTEventListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.MouseEvent;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.Map;
 
 public class IceTermView {
 
-    private IceTermToolWindow iceTermToolWindowPanel;
-    private Project myProject;
-    private ToolWindowImpl myToolWindow;
+    private final IceTermToolWindow iceTermToolWindowPanel;
+    private final Project myProject;
+    private ToolWindow myToolWindow;
     private ConEmuStateChangedListener conEmuStateChangedListener;
-    private boolean focusing;
 
     public ConEmuControl getConEmuControl() {
         return conEmuControl;
@@ -48,9 +37,6 @@ public class IceTermView {
     private ConEmuControl conEmuControl;
     private Panel hiddenHandle;
     private JFrame frame;
-    private WindowInfoImpl windowInfo;
-    private Map<String, WindowInfoImpl> mySameDockWindows = new HashMap<>();
-    private ConEmuStartInfo startinfo;
 
     public IceTermView(@NotNull Project project) {
         myProject = project;
@@ -62,7 +48,7 @@ public class IceTermView {
             return;
         }
 
-        myToolWindow = (ToolWindowImpl) toolWindow;
+        myToolWindow = toolWindow;
 
         conEmuStateChangedListener = new ConEmuStateChangedListener(myProject);
         if (myToolWindow.getContentManager().getContentCount() == 0) {
@@ -81,7 +67,9 @@ public class IceTermView {
         ToolWindow window = ToolWindowManager.getInstance(myProject).getToolWindow(IceTermToolWindowFactory.TOOL_WINDOW_ID);
         if (conEmuControl != null && conEmuControl.getSession() != null) {
             conEmuStateChangedListener.changeDir(fileToOpen, newTab);
-            window.show(null);
+            if (window != null) {
+                window.show(null);
+            }
             conEmuControl.requestFocus();
             return;
         }
@@ -99,35 +87,35 @@ public class IceTermView {
     }
 
     public JFrame getMainFrame() {
-        Frame[] frames = IdeFrameImpl.getFrames();
-        for (int i = 0; i < frames.length; i++) {
-            if (frames[i] instanceof JFrame && frames[i] instanceof IdeFrameImpl) {
-                IdeFrameImpl frame = (IdeFrameImpl) frames[i];
-                if (frame.getProject() == null) {
+        Frame[] frames = Frame.getFrames();
+        for (Frame frame : frames) {
+            if (frame instanceof IdeFrame) {
+                ProjectFrameHelper frameHelper = ProjectFrameHelper.getFrameHelper(frame);
+
+                if (frameHelper == null || frameHelper.getProject() == null) {
                     continue;
                 }
-                if (StringUtils.equals(frame.getProject().getName(), myProject.getName())) {
-                    return frame;
-                }
 
+                if (StringUtils.equals(frameHelper.getProject().getName(), myProject.getName())) {
+                    return (JFrame) frame;
+                }
             }
         }
         return null;
     }
 
-    private void createTerminalContent(ToolWindowImpl toolWindow) {
+    private void createTerminalContent(ToolWindow toolWindow) {
         ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
         Content content = contentFactory.createContent(iceTermToolWindowPanel.getContent(), "", false);
         final ContentManager contentManager = toolWindow.getContentManager();
         contentManager.addContent(content);
 
         createConEmuControl();
-        storeState();
         addListeners();
     }
 
-    private ConEmuControl createConEmuControl() {
-        this.startinfo = new ConEmuStartInfo(myProject);
+    private void createConEmuControl() {
+        ConEmuStartInfo startinfo = new ConEmuStartInfo(myProject);
 
         conEmuControl = new ConEmuControl(startinfo);
         conEmuControl.setMinimumSize(new Dimension(400, 400));
@@ -136,63 +124,14 @@ public class IceTermView {
         iceTermToolWindowPanel.getContent().setBackground(background);
         conEmuControl.setBackground(background);
         conEmuControl.addStateChangedListener(conEmuStateChangedListener);
-        return conEmuControl;
-    }
-
-    private void storeState() {
-        this.windowInfo = this.getWindowInfo(this.myToolWindow.getId()).copy();
-        this.windowInfo.setType(getToolWindowType());
-        mySameDockWindows = new HashMap<>();
-        this.getSameDockWindows().forEach((key, value) -> mySameDockWindows.put(key, value));
     }
 
     private void addListeners() {
-        myProject.getMessageBus().connect().subscribe(ToolWindowManagerListener.TOPIC, new ToolWindowManagerListener() {
-            @Override
-            public void stateChanged() {
-                if (windowInfoChanged()) {
-                    storeState();
-                    saveTempHwnd();
-                }
-            }
-        });
-
-        myProject.getMessageBus().connect().subscribe(AnActionListener.TOPIC, new AnActionListener() {
-            @Override
-            public void beforeActionPerformed(@NotNull AnAction action, @NotNull DataContext dataContext, AnActionEvent event) {
-                if (action instanceof ToolWindowViewModeAction) {
-                    String activeToolWindowId = myToolWindow.getToolWindowManager().getActiveToolWindowId();
-                    if (activeToolWindowId == null || !activeToolWindowId.equals(myToolWindow.getId())) {
-                        return;
-                    }
-                    try {
-                        Field viewMode = action.getClass().getDeclaredField("myMode");
-                        viewMode.setAccessible(true);
-                        ToolWindowViewModeAction.ViewMode myMode = (ToolWindowViewModeAction.ViewMode) viewMode.get(action);
-                        if (myMode.equals(ToolWindowViewModeAction.ViewMode.Float)) {
-                            saveTempHwnd();
-                        }
-                    } catch (NoSuchFieldException e) {
-                        e.printStackTrace();
-                    } catch (IllegalAccessException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        });
+        conEmuControl.addControlRemovedListener(this::saveTempHwnd);
 
         AWTEventListener listener = event -> {
             if (conEmuControl == null) {
                 return;
-            }
-
-            if (event.getID() == 1005) {
-                FocusEvent focusEvent = (FocusEvent) event;
-                if (isInToolWindow(focusEvent.getSource()) && !isInToolWindow(focusEvent.getOppositeComponent())) {
-                    if (!focusEvent.isTemporary() && myToolWindow != null && (myToolWindow.isAutoHide() || myToolWindow.getType() == ToolWindowType.SLIDING)) {
-                        saveTempHwnd();
-                    }
-                }
             }
 
             if (event.getID() == 1004) {
@@ -218,13 +157,16 @@ public class IceTermView {
 
             if (event.getID() == 501 && conEmuControl.isForeground()) {
                 MouseEvent mouseEvent = (MouseEvent) event;
-                String activeToolWindowId = myToolWindow.getToolWindowManager().getActiveToolWindowId();
+                String activeToolWindowId = ToolWindowManager.getInstance(myProject).getActiveToolWindowId();
+
                 if (activeToolWindowId == null) {
                     return;
                 }
+
                 if (isInToolWindow(mouseEvent.getComponent())) {
                     return;
                 }
+
                 conEmuControl.removeFocus();
             }
         };
@@ -265,70 +207,11 @@ public class IceTermView {
         return source != null;
     }
 
-    private ToolWindowType getToolWindowType() {
-        String id = myToolWindow.getId();
-        ToolWindowType type = null;
-        try {
-            Field myId2InternalDecoratorField = myToolWindow.getToolWindowManager().getClass().getDeclaredField("myId2InternalDecorator");
-            myId2InternalDecoratorField.setAccessible(true);
-            Map<String, InternalDecorator> myId2InternalDecorator = (Map<String, InternalDecorator>) myId2InternalDecoratorField.get(myToolWindow.getToolWindowManager());
-            Field myId2FloatingDecoratorField = myToolWindow.getToolWindowManager().getClass().getDeclaredField("myId2FloatingDecorator");
-            myId2FloatingDecoratorField.setAccessible(true);
-            Map<String, InternalDecorator> myId2FloatingDecorator = (Map<String, InternalDecorator>) myId2FloatingDecoratorField.get(myToolWindow.getToolWindowManager());
-            Field myId2WindowedDecoratorField = myToolWindow.getToolWindowManager().getClass().getDeclaredField("myId2WindowedDecorator");
-            myId2WindowedDecoratorField.setAccessible(true);
-            Map<String, InternalDecorator> myId2WindowedDecorator = (Map<String, InternalDecorator>) myId2WindowedDecoratorField.get(myToolWindow.getToolWindowManager());
-            if (myId2FloatingDecorator.containsKey(id)) {
-                type = ToolWindowType.FLOATING;
-            } else if (myId2WindowedDecorator.containsKey(id)) {
-                type = ToolWindowType.WINDOWED;
-            } else if (myId2InternalDecorator.containsKey(id)) {
-                type = ToolWindowType.DOCKED;
-            } else {
-                type = ToolWindowType.SLIDING;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return type;
-    }
-
-    private Map<String, WindowInfoImpl> getSameDockWindows() {
-        Map<String, WindowInfoImpl> sameDockWindows = new HashMap<>();
-        try {
-            Field myId2InternalDecoratorField = myToolWindow.getToolWindowManager().getClass().getDeclaredField("myId2InternalDecorator");
-            myId2InternalDecoratorField.setAccessible(true);
-            Map<String, InternalDecorator> myId2InternalDecorator = (Map<String, InternalDecorator>) myId2InternalDecoratorField.get(myToolWindow.getToolWindowManager());
-            myId2InternalDecorator.forEach((key, value) -> {
-                WindowInfoImpl windowInfo = getWindowInfo(key);
-                if (windowInfo.getAnchor() == this.windowInfo.getAnchor() && windowInfo.isDocked() && windowInfo.isVisible()) {
-                    sameDockWindows.put(key, windowInfo);
-                }
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return sameDockWindows;
-    }
-
-    private boolean windowInfoChanged() {
-        WindowInfoImpl newWindowInfo = this.getWindowInfo(myToolWindow.getId());
-        boolean changed = false;
-        changed |= newWindowInfo.isVisible() != windowInfo.isVisible();
-        changed |= newWindowInfo.isAutoHide() != windowInfo.isAutoHide();
-        changed |= newWindowInfo.isMaximized() != windowInfo.isMaximized();
-        changed |= newWindowInfo.getAnchor() != windowInfo.getAnchor();
-        changed |= newWindowInfo.getType() != windowInfo.getType();
-
-        changed |= !this.getSameDockWindows().keySet().equals(this.mySameDockWindows.keySet()) && this.windowInfo.isDocked();
-        return changed;
-    }
-
     private void saveTempHwnd() {
         if (conEmuControl.getSession() != null) {
             Component root = SwingUtilities.getRoot(myToolWindow.getComponent());
             if (root != null && frame == null) {
-                if (root instanceof IdeFrameImpl) {
+                if (root instanceof IdeFrame) {
                     frame = (JFrame) root;
                 } else if (root instanceof FloatingDecorator) {
                     frame = (JFrame) root.getParent();
@@ -349,21 +232,10 @@ public class IceTermView {
                 }
             }
             if (hiddenHandle != null) {
-                conEmuControl.setParentHWND(getComponentPointer(hiddenHandle));
+                Pointer pointer = getComponentPointer(hiddenHandle);
+                conEmuControl.setParentHWND(pointer);
             }
         }
-    }
-
-    private WindowInfoImpl getWindowInfo(String id) {
-        WindowInfoImpl returnValue = null;
-        try {
-            Method method = myToolWindow.getToolWindowManager().getClass().getDeclaredMethod("getRegisteredInfoOrLogError", String.class);
-            method.setAccessible(true);
-            returnValue = (WindowInfoImpl) method.invoke(myToolWindow.getToolWindowManager(), id);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return returnValue;
     }
 
 }

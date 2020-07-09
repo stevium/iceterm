@@ -356,14 +356,14 @@ public class ConEmuStartInfo {
     @NotNull
     private String InitConEmuLocation() {
         String envPath = System.getenv("PATH");
-        LinkedList<String> searhPaths = new LinkedList<String>();
+        LinkedList<String> searchPaths = new LinkedList<String>();
 
         if (!StringUtils.isEmpty(binFolder))
-            searhPaths.add(new File(binFolder, "ConEmu").getPath());
+            searchPaths.add(new File(binFolder, "ConEmu").getPath());
 
-        searhPaths.addAll(Arrays.asList(envPath.split(";")));
+        searchPaths.addAll(Arrays.asList(envPath.split(";")));
 
-        for (String dir : searhPaths) {
+        for (String dir : searchPaths) {
             File candidate = new File(dir, ConEmuConstants.ConEmuExeName);
             if (candidate.exists()) {
                 return candidate.getAbsolutePath();

@@ -5,7 +5,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
-import com.intellij.openapi.wm.impl.ToolWindowImpl;
 
 import javax.swing.*;
 
@@ -15,7 +14,7 @@ public class IceTermToolWindow implements Disposable {
     public IceTermToolWindow(Project project) {
         Disposer.register(this, () -> {
             ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
-            Disposer.dispose((ToolWindowImpl)toolWindowManager.getToolWindow(IceTermToolWindowFactory.TOOL_WINDOW_ID));
+            Disposer.dispose(toolWindowManager.getToolWindow(IceTermToolWindowFactory.TOOL_WINDOW_ID).getDisposable());
             myToolWindowContent = null;
         });
     }
