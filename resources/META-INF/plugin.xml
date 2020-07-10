@@ -1,16 +1,17 @@
 <idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
   <id>org.jetbrains.plugins.iceterm</id>
   <name>IceTerm</name>
-  <version>0.0.6</version>
+  <version>0.0.7</version>
   <vendor email="milos@mstevanovic.net" url="http://www.stevium.com">Stevium</vendor>
   <description><![CDATA[
       IceTerm is a plugin for integrating ConEmu terminal emulator as a tool window inside IntelliJ platform based IDEs.
     ]]></description>
 
   <change-notes><![CDATA[
-      Fix issues with closing and prevent ConEmu from crashing
-
-      Initial ImplementationI - Integrated ConEmu within IntelliJ IDEA IDE
+      Set ShowScrollBar by default to auto instead of always being shown
+      Fix focus not removed from IceTerm when editor window clicked
+      Add plugin icon and update descriptions
+      Fix issues with closing which caused ConEmu to crash occasionally
     ]]>
   </change-notes>
 
