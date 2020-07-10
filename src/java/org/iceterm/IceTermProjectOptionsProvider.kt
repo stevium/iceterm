@@ -7,8 +7,6 @@ import com.intellij.openapi.components.Storage
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectRootManager
-import com.intellij.openapi.util.SystemInfo
-import java.io.File
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KProperty
 

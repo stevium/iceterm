@@ -1,27 +1,29 @@
 package org.iceterm;
 
+import com.intellij.openapi.actionSystem.ex.AnActionListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.wm.*;
-import com.intellij.openapi.wm.impl.*;
+import com.intellij.openapi.wm.IdeFrame;
+import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowManager;
+import com.intellij.openapi.wm.ex.ToolWindowManagerListener;
+import com.intellij.openapi.wm.impl.FloatingDecorator;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import com.intellij.ui.content.ContentManager;
 import com.sun.jna.Pointer;
-import org.apache.commons.lang.StringUtils;
 import org.iceterm.action.ConEmuStateChangedListener;
 import org.iceterm.ceintegration.ConEmuControl;
 import org.iceterm.ceintegration.ConEmuStartInfo;
+import org.iceterm.util.ToolWindowUtils;
 import org.jetbrains.annotations.NotNull;
-
-import static com.sun.jna.Native.getComponentPointer;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.AWTEventListener;
-import java.awt.event.FocusEvent;
-import java.awt.event.MouseEvent;
 import java.lang.reflect.Field;
+
+import static com.sun.jna.Native.getComponentPointer;
 
 public class IceTermView {
 
@@ -29,6 +31,8 @@ public class IceTermView {
     private final Project myProject;
     private ToolWindow myToolWindow;
     private ConEmuStateChangedListener conEmuStateChangedListener;
+    private ToolWindowUtils myToolWindowUtils;
+    private IceTermFocusHandler focusHandler;
 
     public ConEmuControl getConEmuControl() {
         return conEmuControl;
@@ -49,10 +53,11 @@ public class IceTermView {
         }
 
         myToolWindow = toolWindow;
+        myToolWindowUtils = new ToolWindowUtils(myToolWindow, myProject);
 
         conEmuStateChangedListener = new ConEmuStateChangedListener(myProject);
         if (myToolWindow.getContentManager().getContentCount() == 0) {
-            createNewSession();
+            startNewSession();
         }
     }
 
@@ -70,7 +75,7 @@ public class IceTermView {
             if (window != null) {
                 window.show(null);
             }
-            conEmuControl.requestFocus();
+            conEmuControl.setFocus();
             return;
         }
         initToolWindow(window);
@@ -78,30 +83,14 @@ public class IceTermView {
         window.show(null);
     }
 
-    public void createNewSession() {
+    public void startNewSession() {
         ToolWindow window = ToolWindowManager.getInstance(myProject).getToolWindow(IceTermToolWindowFactory.TOOL_WINDOW_ID);
         if (window != null && window.isAvailable()) {
             createTerminalContent(myToolWindow);
+            focusHandler = new IceTermFocusHandler(conEmuControl, myToolWindow, myProject, myToolWindowUtils);
+            addListeners();
             window.activate(null);
         }
-    }
-
-    public JFrame getMainFrame() {
-        Frame[] frames = Frame.getFrames();
-        for (Frame frame : frames) {
-            if (frame instanceof IdeFrame) {
-                ProjectFrameHelper frameHelper = ProjectFrameHelper.getFrameHelper(frame);
-
-                if (frameHelper == null || frameHelper.getProject() == null) {
-                    continue;
-                }
-
-                if (StringUtils.equals(frameHelper.getProject().getName(), myProject.getName())) {
-                    return (JFrame) frame;
-                }
-            }
-        }
-        return null;
     }
 
     private void createTerminalContent(ToolWindow toolWindow) {
@@ -111,15 +100,14 @@ public class IceTermView {
         contentManager.addContent(content);
 
         createConEmuControl();
-        addListeners();
     }
 
     private void createConEmuControl() {
-        ConEmuStartInfo startinfo = new ConEmuStartInfo(myProject);
-
-        conEmuControl = new ConEmuControl(startinfo);
+        ConEmuStartInfo startInfo = new ConEmuStartInfo(myProject);
+        conEmuControl = new ConEmuControl(startInfo, myToolWindow, myToolWindowUtils);
         conEmuControl.setMinimumSize(new Dimension(400, 400));
         iceTermToolWindowPanel.getContent().add(conEmuControl);
+
         Color background = iceTermToolWindowPanel.getContent().getParent().getBackground();
         iceTermToolWindowPanel.getContent().setBackground(background);
         conEmuControl.setBackground(background);
@@ -129,77 +117,14 @@ public class IceTermView {
     private void addListeners() {
         conEmuControl.addControlRemovedListener(this::saveTempHwnd);
 
-        AWTEventListener listener = event -> {
-            if (conEmuControl == null) {
-                return;
-            }
+        myProject.getMessageBus().connect().subscribe(AnActionListener.TOPIC, focusHandler);
 
-            if (event.getID() == 1004) {
-                FocusEvent focusEvent = (FocusEvent) event;
-                if (isInToolWindow(focusEvent.getSource())) {
-                    ToolWindowManager windowManager = ToolWindowManager.getInstance(myProject);
-                    windowManager.invokeLater(() -> {
-                            JComponent parent = (JComponent) conEmuControl.getParent();
-                            parent.getRootPane().getParent().setVisible(true);
-                    });
-                    Thread t = new Thread(() -> {
-                        try {
-                            Thread.sleep(100);
-                            System.out.println("Settings Focus from 1004");
-                            conEmuControl.setFocus();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    });
-                    t.start();
-                }
-            }
+        myProject.getMessageBus().connect().subscribe(ToolWindowManagerListener.TOPIC, focusHandler);
 
-            if (event.getID() == 501 && conEmuControl.isForeground()) {
-                MouseEvent mouseEvent = (MouseEvent) event;
-
-                if (isInToolWindow(mouseEvent.getComponent())) {
-                    return;
-                }
-
-                conEmuControl.removeFocus();
-            }
-        };
         AWTEventListener internalEventLostListener = Toolkit.getDefaultToolkit().getAWTEventListeners()[2];
         Toolkit.getDefaultToolkit().removeAWTEventListener(internalEventLostListener);
-        Toolkit.getDefaultToolkit().addAWTEventListener(listener, 28L);
+        Toolkit.getDefaultToolkit().addAWTEventListener(this.focusHandler, 28L);
         Toolkit.getDefaultToolkit().addAWTEventListener(internalEventLostListener, AWTEvent.FOCUS_EVENT_MASK);
-    }
-
-    private boolean isInToolWindow(Object component) {
-        Component source = component instanceof Component ? (Component) component : null;
-
-        if (source == null) {
-            return false;
-        }
-
-        Component myToolWindow = this.myToolWindow.getComponent();
-
-        if (((JComponent) myToolWindow).getRootPane() == null)
-            return false;
-
-        JFrame mainFrame = getMainFrame();
-        Container myToolWindowRoot = ((JComponent) myToolWindow).getRootPane().getParent();
-
-        if (source instanceof JFrame && source != mainFrame) {
-            return source == myToolWindowRoot;
-        }
-
-        if (myToolWindowRoot != mainFrame)
-            myToolWindow = myToolWindowRoot;
-
-        if (myToolWindow != null) {
-            while (source != null && source != myToolWindow) {
-                source = source.getParent();
-            }
-        }
-
-        return source != null;
     }
 
     private void saveTempHwnd() {

@@ -1,5 +1,6 @@
 package org.iceterm.ceintegration;
 
+import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.Kernel32;
@@ -8,6 +9,7 @@ import com.sun.jna.platform.win32.WinDef.HWND;
 import com.sun.jna.platform.win32.WinUser.WNDENUMPROC;
 import org.apache.commons.lang.NullArgumentException;
 import org.iceterm.IceTermView;
+import org.iceterm.util.ToolWindowUtils;
 import org.iceterm.util.User32Ext;
 import org.iceterm.util.WinApi;
 import org.jetbrains.annotations.NotNull;
@@ -32,6 +34,8 @@ public class ConEmuControl extends Canvas {
 
     private final List<StateChangedListener> stateChagedListeners = new ArrayList();
     private final List<ControlRemovedListener> controlRemovedListener = new ArrayList();
+    private final ToolWindow myToolWindow;
+    private final ToolWindowUtils myToolWindowUtils;
 
     /**
      * Enabled by default, and with all default values (runs the cmd shell).
@@ -64,13 +68,15 @@ public class ConEmuControl extends Canvas {
         return session;
     }
 
-    public ConEmuControl(ConEmuStartInfo startinfo)
+    public ConEmuControl(ConEmuStartInfo startinfo, ToolWindow toolWindow, ToolWindowUtils toolWindowUtils)
     {
         addFocusListener(focusGained);
         this.setFocusable(true);
         this.setEnabled(true);
         this.setFocusTraversalKeysEnabled(true);
         this.startinfo = startinfo;
+        this.myToolWindow = toolWindow;
+        this.myToolWindowUtils = toolWindowUtils;
     }
 
     FocusAdapter focusGained = new FocusAdapter() {
@@ -90,13 +96,14 @@ public class ConEmuControl extends Canvas {
 
     public void setFocus() {
         if(session != null) {
+            this.myToolWindow.getComponent().requestFocus();
             session.ExecuteGuiMacroTextSync("SetFocus");
         }
     }
 
     public void removeFocus() {
         int appThread = Kernel32.INSTANCE.GetCurrentThreadId();
-        WinDef.HWND ideHwnd = new WinDef.HWND(getComponentPointer(getMainFrame()));
+        WinDef.HWND ideHwnd = new WinDef.HWND(getComponentPointer(myToolWindowUtils.getMainFrame()));
         int foregroundThread = User32Ext.INSTANCE.GetWindowThreadProcessId(ideHwnd, null);
         User32Ext.INSTANCE.AttachThreadInput(foregroundThread, appThread, true);
         User32Ext.INSTANCE.SetForegroundWindow(this.getHandle());
@@ -104,10 +111,6 @@ public class ConEmuControl extends Canvas {
         User32Ext.INSTANCE.SetFocus(ideHwnd);
         User32Ext.INSTANCE.AttachThreadInput(foregroundThread, appThread, false);
         ToolWindowManager.getInstance(startinfo.getProject()).activateEditorComponent();
-    }
-
-    private JFrame getMainFrame() {
-        return IceTermView.getInstance(startinfo.getProject()).getMainFrame();
     }
 
     public void resetParentHWND() {
@@ -294,7 +297,7 @@ public class ConEmuControl extends Canvas {
         if(getHandle() == null)
             return false;
         IceTermView iceTermView = IceTermView.getInstance(startinfo.getProject());
-        HWND mainWindow = new HWND(getComponentPointer(iceTermView.getMainFrame()));
+        HWND mainWindow = new HWND(getComponentPointer(myToolWindowUtils.getMainFrame()));
         WinDef.HWND foregroundHwnd = User32Ext.INSTANCE.GetForegroundWindow();
         if(mainWindow.equals(foregroundHwnd)) {
             return true;

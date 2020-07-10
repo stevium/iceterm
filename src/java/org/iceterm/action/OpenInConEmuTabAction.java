@@ -1,5 +1,6 @@
 package org.iceterm.action;
 
+import com.intellij.ide.actions.RevealFileAction;
 import com.intellij.ide.actions.ShowFilePathAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
@@ -19,7 +20,7 @@ public class OpenInConEmuTabAction extends DumbAwareAction {
 
     @Nullable
     private static VirtualFile getSelectedFile(@NotNull AnActionEvent e) {
-        return ShowFilePathAction.findLocalFile(e.getData(CommonDataKeys.VIRTUAL_FILE));
+        return RevealFileAction.findLocalFile(e.getData(CommonDataKeys.VIRTUAL_FILE));
     }
 
     @Override

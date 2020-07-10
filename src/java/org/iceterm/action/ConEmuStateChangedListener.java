@@ -4,7 +4,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
-import com.intellij.openapi.wm.impl.ToolWindowImpl;
 import org.iceterm.IceTermKeyListener;
 import org.iceterm.IceTermMouseListener;
 import org.iceterm.IceTermToolWindowFactory;
@@ -34,7 +33,7 @@ public class ConEmuStateChangedListener implements ConEmuControl.StateChangedLis
 
     @Override
     public void stateChanged() {
-        ToolWindowImpl window = (ToolWindowImpl) ToolWindowManager.getInstance(myProject).getToolWindow(IceTermToolWindowFactory.TOOL_WINDOW_ID);
+        ToolWindow window = ToolWindowManager.getInstance(myProject).getToolWindow(IceTermToolWindowFactory.TOOL_WINDOW_ID);
         States state = getConEmuControl().getState();
         if (state == States.ConsoleEmulatorWithConsoleProcess) {
             setUpHook();
@@ -57,7 +56,7 @@ public class ConEmuStateChangedListener implements ConEmuControl.StateChangedLis
         }
     }
 
-    private void disposeSession(ToolWindowImpl window) {
+    private void disposeSession(ToolWindow window) {
         ToolWindowManager windowManager = ToolWindowManager.getInstance(myProject);
         windowManager.invokeLater(() -> {
             windowManager.getToolWindow(window.getId()).hide(null);
@@ -80,7 +79,6 @@ public class ConEmuStateChangedListener implements ConEmuControl.StateChangedLis
     public void changeDir(VirtualFile fileToOpen, Boolean newTab) {
         ToolWindow window = ToolWindowManager.getInstance(myProject).getToolWindow(IceTermToolWindowFactory.TOOL_WINDOW_ID);
         if (window != null && window.isAvailable()) {
-            ((ToolWindowImpl) window).ensureContentInitialized();
             ConEmuSession session = getConEmuControl().getSession();
             String path = fileToOpen.isDirectory() ? fileToOpen.getPath() : fileToOpen.getParent().getPath();
             path = path.replace("\"", "\"\"");

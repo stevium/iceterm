@@ -5,12 +5,8 @@ import com.intellij.ide.plugins.PluginInstaller;
 import com.intellij.ide.plugins.PluginStateListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
-import org.iceterm.ceintegration.ConEmuControl;
-import org.iceterm.ceintegration.ConEmuStartInfo;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.logging.Logger;
 
 public class IceTermPostStartupActivity implements StartupActivity {

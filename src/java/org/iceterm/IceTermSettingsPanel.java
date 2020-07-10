@@ -1,10 +1,7 @@
 package org.iceterm;
 
 import com.google.common.collect.Lists;
-import com.intellij.execution.configuration.EnvironmentVariablesTextFieldWithBrowseButton;
-import com.intellij.openapi.actionSystem.KeyboardShortcut;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
-import com.intellij.openapi.keymap.KeymapUtil;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.options.UnnamedConfigurable;
 import com.intellij.openapi.ui.TextComponentAccessor;

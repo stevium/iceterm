@@ -1,16 +1,11 @@
 package org.iceterm
 
-import com.intellij.execution.configuration.EnvironmentVariablesData
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
-import com.intellij.util.xmlb.annotations.Property
 import org.apache.commons.lang.StringUtils
-import org.iceterm.ceintegration.ConEmuConstants
 import org.iceterm.ceintegration.ConEmuStartInfo
-import java.io.File
-import java.lang.Exception
 import javax.swing.KeyStroke
 
 @State(name = "IceTermOptionsProvider", storages = [(Storage("plugin.xml"))])
