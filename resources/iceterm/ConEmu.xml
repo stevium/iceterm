@@ -142,7 +142,7 @@
 			<value name="StatusBar.Hide.Resize" type="hex" data="01"/>
 			<value name="TryToCenter" type="hex" data="01"/>
 			<value name="CenterConsolePad" type="dword" data="00000005"/>
-			<value name="ShowScrollbar" type="hex" data="01"/>
+			<value name="ShowScrollbar" type="hex" data="02"/>
 			<value name="SleepInBackground" type="hex" data="00"/>
 			<value name="IntegralSize" type="hex" data="00"/>
 			<value name="WindowMode" type="dword" data="0000051f"/>
