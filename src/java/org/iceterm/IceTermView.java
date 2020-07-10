@@ -157,11 +157,6 @@ public class IceTermView {
 
             if (event.getID() == 501 && conEmuControl.isForeground()) {
                 MouseEvent mouseEvent = (MouseEvent) event;
-                String activeToolWindowId = ToolWindowManager.getInstance(myProject).getActiveToolWindowId();
-
-                if (activeToolWindowId == null) {
-                    return;
-                }
 
                 if (isInToolWindow(mouseEvent.getComponent())) {
                     return;
