@@ -8,14 +8,16 @@
     ]]></description>
 
   <change-notes><![CDATA[
-      Set ShowScrollBar by default to auto instead of always being shown
-      Fix focus not removed from IceTerm when editor window clicked
-      Add plugin icon and update descriptions
-      Fix issues with closing which caused ConEmu to crash occasionally
+      <ul>
+          <li>Set ShowScrollBar by default to auto instead of always being shown</li>
+          <li>Fix focus not removed from IceTerm when editor window clicked</li>
+          <li>Add plugin icon and update descriptions</li>
+          <li>Fix issues with closing which caused ConEmu to crash occasionally</li>
+      </ul>
     ]]>
   </change-notes>
 
-  <idea-version since-build="191.0"/>
+  <idea-version since-build="201.5985"/>
 
   <extensions defaultExtensionNs="com.intellij">
     <postStartupActivity implementation="org.iceterm.IceTermPostStartupActivity"/>
