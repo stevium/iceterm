@@ -509,7 +509,7 @@ public class ConEmuSession {
 
     private String initMakeConEmuCommandLine_EmitConfigFile(@NotNull File dirForConflgFile, @NotNull ConEmuStartInfo startinfo, @NotNull HostContext hostcontext) {
         if (dirForConflgFile == null)
-            throw new NullArgumentException("dirForConflgFile");
+            throw new NullArgumentException("dirForConfigFile");
         if (startinfo == null)
             throw new NullArgumentException("startInfo");
         if (hostcontext == null)

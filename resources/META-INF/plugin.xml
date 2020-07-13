@@ -1,7 +1,7 @@
 <idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
   <id>org.jetbrains.plugins.iceterm</id>
   <name>IceTerm</name>
-  <version>0.0.8</version>
+  <version>0.0.11</version>
   <vendor email="milos@mstevanovic.net" url="http://www.stevium.com">Stevium</vendor>
   <description><![CDATA[
       IceTerm is a plugin for integrating ConEmu terminal emulator as a tool window inside IntelliJ platform based IDEs.
@@ -9,7 +9,10 @@
 
   <change-notes><![CDATA[
       <ul>
-          <li>Improved general stability of the plugin and focus issue fixes</li>
+          <li>Enable Tabs and TabBar functionality</li>
+          <li>Add ConEmu XML path option in plugin setting</li>
+          <li>Fix rendering issues in "Distraction free mode"</li>
+          <li>Fix ConEmu Windows to work without interruptions which were happening before due to Focus issues</li>
       </ul>
     ]]>
   </change-notes>
@@ -19,8 +22,10 @@
   <extensions defaultExtensionNs="com.intellij">
     <postStartupActivity implementation="org.iceterm.IceTermPostStartupActivity"/>
 
-    <toolWindow id="IceTerm" secondary="true" icon="/iceterm/conemu_13x13.svg" anchor="right"
-                factoryClass="org.iceterm.IceTermToolWindowFactory"/>
+    <toolWindow id="IceTerm" anchor="bottom" icon="/iceterm/conemu_13x13.svg"
+                factoryClass="org.iceterm.IceTermToolWindowFactory"
+                secondary="false"
+                canCloseContents="true"/>
 
     <projectConfigurable groupId="tools" groupWeight="130" displayName="IceTerm" id="iceterm"
     instance="org.iceterm.IceTermOptionsConfigurable"/>

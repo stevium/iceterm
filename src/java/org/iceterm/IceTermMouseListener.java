@@ -1,14 +1,17 @@
 package org.iceterm;
 
+import com.intellij.openapi.wm.ToolWindow;
 import org.iceterm.cehook.mouse.NativeMouseEvent;
 import org.iceterm.cehook.mouse.NativeMouseListener;
 import org.iceterm.ceintegration.ConEmuControl;
 
 public class IceTermMouseListener implements NativeMouseListener {
     private final ConEmuControl conEmuControl;
+    private final ToolWindow myToolWindow;
 
-    public IceTermMouseListener(ConEmuControl conEmuControl) {
+    public IceTermMouseListener(ToolWindow toolWindow, ConEmuControl conEmuControl) {
         this.conEmuControl = conEmuControl;
+        this.myToolWindow = toolWindow;
     }
 
     @Override
@@ -19,7 +22,7 @@ public class IceTermMouseListener implements NativeMouseListener {
     @Override
     public void nativeMousePressed(NativeMouseEvent nativeEvent) {
         if(conEmuControl.isForeground()) {
-            conEmuControl.setFocus();
+            this.myToolWindow.getComponent().requestFocus();
         }
     }
 

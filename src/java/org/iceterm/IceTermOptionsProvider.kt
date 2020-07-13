@@ -35,6 +35,20 @@ class IceTermOptionsProvider : PersistentStateComponent<IceTermOptionsProvider.S
         myState.myConEmuPath = conemuPath
     }
 
+    fun getConEmuXmlPath(): String? {
+        if(StringUtils.isNotEmpty(myState.myConEmuXml)) {
+            var path: String? = myState.myConEmuXml
+            path = path?.replace("^\"|\"$", "")
+            path = path?.replace("^\'|\'$", "")
+            return path?.trim()
+        }
+        return defaultConEmuXmlPath()
+    }
+
+    fun setConEmuXmlPath(conEmuXmlPath: String) {
+        myState.myConEmuXml = conEmuXmlPath
+    }
+
     fun getShellTask(): String? {
         return myState.myShellTask ?: defaultShellTask()
     }
@@ -59,12 +73,17 @@ class IceTermOptionsProvider : PersistentStateComponent<IceTermOptionsProvider.S
 
     class State {
         var myConEmuPath: String? = null
+        var myConEmuXml: String? = null
         var myShellTask: String? = null
         var myEscapeKey: String? = null
     }
 
     fun defaultConEmuPath(): String {
         return defaultStartInfo.getConEmuExecutablePath();
+    }
+
+    fun defaultConEmuXmlPath(): String {
+        return defaultStartInfo.conEmuXmlPath;
     }
 
     fun defaultShellTask(): String {

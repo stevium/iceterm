@@ -8,6 +8,7 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.openapi.wm.ex.ToolWindowManagerListener;
 import com.intellij.openapi.wm.impl.FloatingDecorator;
+import com.intellij.openapi.wm.impl.IdeFrameImpl;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import com.intellij.ui.content.ContentManager;
@@ -128,33 +129,27 @@ public class IceTermView {
     }
 
     private void saveTempHwnd() {
-        if (conEmuControl.getSession() != null) {
-            Component root = SwingUtilities.getRoot(myToolWindow.getComponent());
-            if (root != null && frame == null) {
-                if (root instanceof IdeFrame) {
-                    frame = (JFrame) root;
-                } else if (root instanceof FloatingDecorator) {
-                    frame = (JFrame) root.getParent();
-                } else {
-                    try {
-                        Field myParentField = root.getClass().getDeclaredField("myParent");
-                        myParentField.setAccessible(true);
-                        frame = (JFrame) myParentField.get(root);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-                if (frame != null) {
+        if (conEmuControl.getSession() == null) {
+            return;
+        }
+
+        Frame[] frames = Frame.getFrames();
+
+        if (hiddenHandle == null) {
+            for (Frame frame : frames) {
+                if (frame instanceof IdeFrameImpl) {
                     hiddenHandle = new Panel();
                     hiddenHandle.setVisible(false);
                     hiddenHandle.setLocation(400, 400);
-                    frame.add(hiddenHandle, BorderLayout.CENTER);
+                    hiddenHandle.setPreferredSize(new Dimension(1,1));
+                    ((IdeFrameImpl) frame).getRootPane().add(hiddenHandle, BorderLayout.CENTER);
                 }
             }
-            if (hiddenHandle != null) {
-                Pointer pointer = getComponentPointer(hiddenHandle);
-                conEmuControl.setParentHWND(pointer);
-            }
+        }
+
+        if (hiddenHandle != null) {
+            Pointer pointer = getComponentPointer(hiddenHandle);
+            conEmuControl.setParentHWND(pointer);
         }
     }
 

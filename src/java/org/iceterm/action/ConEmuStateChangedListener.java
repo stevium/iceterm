@@ -72,7 +72,9 @@ public class ConEmuStateChangedListener implements ConEmuControl.StateChangedLis
         System.out.println("Setting up native hook hook");
         hook.run(WinApi.Helpers.getProcessId(process));
         GlobalScreen.addNativeKeyListener(new IceTermKeyListener(getConEmuControl()));
-        GlobalScreen.addNativeMouseListener(new IceTermMouseListener(getConEmuControl()));
+        ToolWindow window = ToolWindowManager.getInstance(myProject).getToolWindow(IceTermToolWindowFactory.TOOL_WINDOW_ID);
+        IceTermMouseListener mouseListener = new IceTermMouseListener(window, getConEmuControl());
+        GlobalScreen.addNativeMouseListener(mouseListener);
         GlobalScreen.setEventDispatcher(new SwingDispatchService());
     }
 

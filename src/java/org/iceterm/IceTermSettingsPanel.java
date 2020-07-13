@@ -25,6 +25,7 @@ public class IceTermSettingsPanel {
     private JPanel myWholePanel;
     private JTextField myShellTaskField;
     private ShortcutTextField myEscapeKeyField;
+    private TextFieldWithBrowseButton myConEmuXmlPathField;
 
     private IceTermOptionsProvider myOptionsProvider;
     private IceTermProjectOptionsProvider myProjectOptionsProvider;
@@ -46,6 +47,13 @@ public class IceTermSettingsPanel {
                 fileChooserDescriptor,
                 TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT);
 
+        myConEmuPathField.addBrowseFolderListener(
+                "",
+                "ConEmu.xml file path",
+                null,
+                fileChooserDescriptor,
+                TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT);
+
         fileChooserDescriptor = new FileChooserDescriptor(false, true, false, false, false, false);
 
         myStartDirectoryField.addBrowseFolderListener(
@@ -60,6 +68,15 @@ public class IceTermSettingsPanel {
             protected void textChanged(@NotNull DocumentEvent e) {
                 myConEmuPathField
                         .getTextField().setForeground(StringUtil.equals(myConEmuPathField.getText(), myOptionsProvider.defaultConEmuPath()) ?
+                        getDefaultValueColor() : getChangedValueColor());
+            }
+        });
+
+        myConEmuXmlPathField.getTextField().getDocument().addDocumentListener(new DocumentAdapter() {
+            @Override
+            protected void textChanged(@NotNull DocumentEvent e) {
+                myConEmuXmlPathField
+                        .getTextField().setForeground(StringUtil.equals(myConEmuXmlPathField.getText(), myOptionsProvider.defaultConEmuXmlPath()) ?
                         getDefaultValueColor() : getChangedValueColor());
             }
         });
@@ -97,6 +114,7 @@ public class IceTermSettingsPanel {
 
     public boolean isModified() {
         return !Comparing.equal(myConEmuPathField.getText(), myOptionsProvider.getConEmuPath())
+                || !Comparing.equal(myConEmuXmlPathField.getText(), myOptionsProvider.getConEmuXmlPath())
                 || !Comparing.equal(myStartDirectoryField.getText(), StringUtil.notNullize(myProjectOptionsProvider.getStartingDirectory()))
                 || !myOptionsProvider.getEscapeKey().equals(myEscapeKeyField.getKeyStroke())
                 || !Comparing.equal(myShellTaskField.getText(), myOptionsProvider.getShellTask())
@@ -106,6 +124,7 @@ public class IceTermSettingsPanel {
     public void apply() {
         myProjectOptionsProvider.setStartingDirectory(myStartDirectoryField.getText());
         myOptionsProvider.setConEmuPath(myConEmuPathField.getText());
+        myOptionsProvider.setConEmuXmlPath(myConEmuXmlPathField.getText());
         myOptionsProvider.setEscapeKey(myEscapeKeyField.getKeyStroke());
         myOptionsProvider.setShellTask(myShellTaskField.getText());
         myConfigurables.forEach(c -> {
@@ -120,6 +139,7 @@ public class IceTermSettingsPanel {
 
     public void reset() {
         myConEmuPathField.setText(myOptionsProvider.getConEmuPath());
+        myConEmuXmlPathField.setText(myOptionsProvider.getConEmuXmlPath());
         myStartDirectoryField.setText(myProjectOptionsProvider.getStartingDirectory());
         myEscapeKeyField.setKeyStroke(myOptionsProvider.getEscapeKey());
         myShellTaskField.setText(myOptionsProvider.getShellTask());

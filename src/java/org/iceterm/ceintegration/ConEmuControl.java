@@ -53,11 +53,11 @@ public class ConEmuControl extends Canvas {
      * The running session, if currently running.
      */
     @Nullable
-    private ConEmuSession session;
+    private static ConEmuSession session;
 
     private ConEmuStartInfo startinfo;
 
-    public void terminate() {
+    public static void terminate() {
         if(session != null) {
             session.close();
         }
@@ -316,16 +316,20 @@ public class ConEmuControl extends Canvas {
         if(conemuRootPane == null) {
             return false;
         }
-        WinDef.HWND conemuRootHwnd = new HWND(getComponentPointer(conemuRootPane.getParent()));
+        WinDef.HWND conEmuRootHwnd = new HWND(getComponentPointer(conemuRootPane.getParent()));
 
         int foregroundThread = User32Ext.INSTANCE.GetWindowThreadProcessId(foregroundHwnd, null);
-        int conemuThread = User32Ext.INSTANCE.GetWindowThreadProcessId(conemuHwnd, null);
+        int conEmuThread = User32Ext.INSTANCE.GetWindowThreadProcessId(conemuHwnd, null);
         int appThread = Kernel32.INSTANCE.GetCurrentThreadId();
-        if(foregroundThread != appThread && foregroundThread != conemuThread) {
+        if(foregroundThread == appThread) {
+            return false;
+        }
+
+        if (foregroundThread == conEmuThread) {
             return true;
         }
 
-        return conemuRootHwnd.equals(foregroundHwnd);
+        return conEmuRootHwnd.equals(foregroundHwnd);
     }
 
     @Override

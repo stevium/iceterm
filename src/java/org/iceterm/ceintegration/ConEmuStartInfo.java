@@ -12,6 +12,7 @@ import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import javax.swing.*;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -26,7 +27,7 @@ public class ConEmuStartInfo {
 
     static {
         try {
-            binFolder = extractBinaries();
+            binFolder = extractBinaries(false);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -95,6 +96,9 @@ public class ConEmuStartInfo {
     private String sConEmuExecutablePath = "";
 
     @NotNull
+    private String sConEmuXmlPath = "";
+
+    @NotNull
     private String sConsoleProcessCommandLine = ConEmuConstants.DefaultConsoleCommandLine;
 
     @NotNull
@@ -129,6 +133,7 @@ public class ConEmuStartInfo {
         this.setsStartupDirectory(myProjectOptionsProvider.getStartingDirectory());
         this.setConsoleProcessCommandLine(myOptionsProvider.getShellTask());
         this.setConEmuExecutablePath(myOptionsProvider.getConEmuPath());
+        this.setConEmuXmlPath(myOptionsProvider.getConEmuXmlPath());
         this.setLogLevel(ConEmuStartInfo.LogLevels.Basic);
     }
 
@@ -148,11 +153,11 @@ public class ConEmuStartInfo {
             return baseConfiguration;
 
         try {
-            InputStream resourceAsStream = this.getClass().getClassLoader().getResourceAsStream(ICE_TERM + "/ConEmu.xml");
+            File xmlFile = new File(getConEmuXmlPath());
             DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
 
-            return baseConfiguration = documentBuilder.parse(new InputSource(resourceAsStream));
+            return baseConfiguration = documentBuilder.parse(xmlFile);
         } catch (ParserConfigurationException e) {
             e.printStackTrace();
         } catch (SAXException e) {
@@ -209,6 +214,11 @@ public class ConEmuStartInfo {
         return sConEmuExecutablePath;
     }
 
+    @NotNull
+    public String getConEmuXmlPath() {
+        return sConEmuXmlPath;
+    }
+
     public void setConEmuExecutablePath(@NotNull String conEmuExecutablePath) {
         if (conEmuExecutablePath == null)
             throw new NullArgumentException("conEmuExecutablePath");
@@ -219,10 +229,21 @@ public class ConEmuStartInfo {
                     "Cannot reset path to an empty string.");
         sConEmuExecutablePath = conEmuExecutablePath;
 
+        if (sConEmuXmlPath.equals(""))
+            sConEmuXmlPath = TryDeriveConEmuXmlPath(sConEmuExecutablePath);
         if (sConEmuConsoleExtenderExecutablePath.equals(""))
             sConEmuConsoleExtenderExecutablePath = TryDeriveConEmuConsoleExtenderExecutablePath(sConEmuExecutablePath);
         if (sConEmuConsoleServerExecutablePath.equals(""))
             sConEmuConsoleServerExecutablePath = TryDeriveConEmuConsoleServerExecutablePath(sConEmuExecutablePath);
+    }
+
+    public void setConEmuXmlPath(@NotNull String conEmuXmlPath) {
+        if (conEmuXmlPath == null)
+            throw new NullArgumentException("conEmuXmlPath");
+        if (conEmuXmlPath.equals(""))
+            throw new IllegalArgumentException("conEmuXmlPath" +
+                    "Cannot reset path to an empty string.");
+        sConEmuXmlPath = conEmuXmlPath;
     }
 
     @Nullable
@@ -375,12 +396,39 @@ public class ConEmuStartInfo {
 
         }
 
-//        Logger.getInstance(this.getClass()).info("DIR IS " + dir);
         return "";
+    }
+
+    @NotNull
+    private String InitConEmuXmlLocation() {
+        File xmlPath = new File(FileHelper.getJarPath(ConEmuStartInfo.class), ICE_TERM + "/ConEmu.xml");
+
+        return xmlPath.getAbsolutePath();
     }
 
     protected void MarkAsUsedUp() {
         isUsedUp = true;
+    }
+
+    @NotNull
+    private String TryDeriveConEmuXmlPath(@NotNull String sConEmuPath) {
+        if (sConEmuPath == null)
+            throw new NullArgumentException("sConEmuPath");
+        if (sConEmuPath == "")
+            return "";
+        String dir = new File(sConEmuPath).getParent();
+        if (dir == null || dir.isEmpty())
+            return "";
+
+        File candidate = new File(dir, "ConEmu.xml");
+        if (candidate.exists())
+            return candidate.getPath();
+
+        candidate = new File(binFolder, "ConEmu/ConEmu.xml");
+        if (candidate.exists())
+            return candidate.getPath();
+
+        return "";
     }
 
     @NotNull
@@ -445,15 +493,27 @@ public class ConEmuStartInfo {
         return "";
     }
 
-   public static String extractBinaries() throws IOException {
-        File unzipDest = new File(FileHelper.getJarPath(ConEmuStartInfo.class), ICE_TERM + "-bin/");
+   public static String extractBinaries(boolean force) throws IOException {
+       File unzipDest = new File(FileHelper.getJarPath(ConEmuStartInfo.class), ICE_TERM + "-bin/");
         if(unzipDest.exists()) {
-            return unzipDest.getPath();
+            File config = new File(FileHelper.getJarPath(ConEmuStartInfo.class), ICE_TERM + "-bin/ConEmu/ConEmu.xml");
+            if(config.exists()) {
+                config.setWritable(true);
+            }
+            unzipDest.delete();
         }
+       unzipDest = new File(FileHelper.getJarPath(ConEmuStartInfo.class), ICE_TERM + "-bin/");
 
        InputStream in = ConEmuStartInfo.class.getClassLoader().getResourceAsStream(ICE_TERM + "/bin.zip");
+
        FileHelper.unzip(in, unzipDest.getPath());
-        return unzipDest.getAbsolutePath();
+
+       File config = new File(FileHelper.getJarPath(ConEmuStartInfo.class), ICE_TERM + "-bin/ConEmu/ConEmu.xml");
+       if(config.exists()) {
+           config.setReadOnly();
+       }
+
+       return unzipDest.getAbsolutePath();
     }
 }
 
