@@ -9,7 +9,7 @@
 JavaVM *jvm;
 JavaVMAttachArgs jvm_attach_args = {
 	JNI_VERSION_1_4,
-	"JNativeHook Library",
+	strdup("JNativeHook Library"),
 	NULL
 };
 

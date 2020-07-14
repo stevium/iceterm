@@ -159,7 +159,7 @@ void hook_stop_proc() {
     dispatch_event(&event);
 }
 
-static int process_key_pressed(int nCode, WPARAM wParam, LPARAM lParam) {
+int process_key_pressed(int nCode, WPARAM wParam, LPARAM lParam) {
     current_modifiers = 0x0000;
     initialize_modifiers();
     //	event.time = kbhook->time;

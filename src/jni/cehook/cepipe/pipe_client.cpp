@@ -75,7 +75,7 @@ void pipe_client::Run()
 {
     UINT uiThreadId = 0;
     m_hThread = (HANDLE)::_beginthreadex(NULL,
-        NULL,
+        0,
         PipeThreadProc,
         this,
         CREATE_SUSPENDED,
