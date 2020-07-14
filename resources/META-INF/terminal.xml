@@ -6,7 +6,6 @@
 
     <project-components>
         <component>
-            <interface-class>org.iceterm.IceTermView</interface-class>
             <implementation-class>org.iceterm.IceTermView</implementation-class>
         </component>
     </project-components>
