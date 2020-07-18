@@ -27,6 +27,10 @@ public class ToolWindowUtils {
 
         Component myToolWindow = this.myToolWindow.getComponent().getParent();
 
+        if(myToolWindow == null) {
+            return false;
+        }
+
         if (((JComponent) myToolWindow).getRootPane() == null)
             return false;
 

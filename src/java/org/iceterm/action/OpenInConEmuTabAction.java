@@ -30,6 +30,9 @@ public class OpenInConEmuTabAction extends DumbAwareAction {
         if (project == null || selectedFile == null) {
             return;
         }
-        IceTermView.getInstance(project).openTerminalIn(selectedFile, true);
+        IceTermView iceTermView = IceTermView.getInstance(project);
+        if(iceTermView != null) {
+            iceTermView.openTerminalIn(selectedFile, true);
+        }
     }
 }

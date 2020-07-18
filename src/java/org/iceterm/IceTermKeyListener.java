@@ -13,11 +13,10 @@ public class IceTermKeyListener extends SwingKeyAdapter {
         conEmuControl = conemu;
     }
 
+    // only escape key
     @Override
     public void keyPressed(KeyEvent keyEvent) {
-        if(conEmuControl.isForeground()) {
-            conEmuControl.removeFocus();
-        }
+        conEmuControl.removeFocus();
     }
 
     @Override

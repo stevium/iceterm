@@ -3,11 +3,9 @@ package org.iceterm;
 import com.intellij.openapi.actionSystem.ex.AnActionListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.wm.IdeFrame;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.openapi.wm.ex.ToolWindowManagerListener;
-import com.intellij.openapi.wm.impl.FloatingDecorator;
 import com.intellij.openapi.wm.impl.IdeFrameImpl;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
@@ -21,8 +19,6 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.AWTEventListener;
-import java.lang.reflect.Field;
 
 import static com.sun.jna.Native.getComponentPointer;
 
@@ -63,7 +59,11 @@ public class IceTermView {
     }
 
     public static IceTermView getInstance(@NotNull Project project) {
-        return project.getComponent(IceTermView.class);
+        try {
+            return project.getComponent(IceTermView.class);
+        } catch (Exception e) {
+           return null;
+        }
     }
 
     public void openTerminalIn(VirtualFile fileToOpen, Boolean newTab) {
@@ -76,7 +76,7 @@ public class IceTermView {
             if (window != null) {
                 window.show(null);
             }
-            conEmuControl.setFocus();
+            conEmuControl.setFocus(true, false);
             return;
         }
         initToolWindow(window);
@@ -122,10 +122,7 @@ public class IceTermView {
 
         myProject.getMessageBus().connect().subscribe(ToolWindowManagerListener.TOPIC, focusHandler);
 
-        AWTEventListener internalEventLostListener = Toolkit.getDefaultToolkit().getAWTEventListeners()[2];
-        Toolkit.getDefaultToolkit().removeAWTEventListener(internalEventLostListener);
         Toolkit.getDefaultToolkit().addAWTEventListener(this.focusHandler, 28L);
-        Toolkit.getDefaultToolkit().addAWTEventListener(internalEventLostListener, AWTEvent.FOCUS_EVENT_MASK);
     }
 
     private void saveTempHwnd() {

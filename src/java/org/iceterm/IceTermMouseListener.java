@@ -21,9 +21,7 @@ public class IceTermMouseListener implements NativeMouseListener {
 
     @Override
     public void nativeMousePressed(NativeMouseEvent nativeEvent) {
-        if(conEmuControl.isForeground()) {
-            this.myToolWindow.getComponent().requestFocus();
-        }
+        conEmuControl.setFocus(false, true);
     }
 
     @Override

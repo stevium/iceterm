@@ -10,7 +10,9 @@ public class IceTermToolWindowFactory implements ToolWindowFactory, DumbAware {
 
     public void createToolWindowContent(Project project, ToolWindow toolWindow) {
         IceTermView terminalView = IceTermView.getInstance(project);
-        terminalView.initToolWindow(toolWindow);
+        if(terminalView != null) {
+            terminalView.initToolWindow(toolWindow);
+        }
     }
 }
 

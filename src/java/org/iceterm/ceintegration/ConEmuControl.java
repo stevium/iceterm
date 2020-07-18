@@ -17,8 +17,6 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
 import java.util.ArrayList;
 import java.util.EventListener;
 import java.util.List;
@@ -36,6 +34,7 @@ public class ConEmuControl extends Canvas {
     private final List<ControlRemovedListener> controlRemovedListener = new ArrayList();
     private final ToolWindow myToolWindow;
     private final ToolWindowUtils myToolWindowUtils;
+    public boolean needsFocus;
 
     /**
      * Enabled by default, and with all default values (runs the cmd shell).
@@ -53,12 +52,12 @@ public class ConEmuControl extends Canvas {
      * The running session, if currently running.
      */
     @Nullable
-    private static ConEmuSession session;
+    private ConEmuSession session;
 
     private ConEmuStartInfo startinfo;
 
-    public static void terminate() {
-        if(session != null) {
+    public void terminate() {
+        if (session != null) {
             session.close();
         }
         session = null;
@@ -68,9 +67,7 @@ public class ConEmuControl extends Canvas {
         return session;
     }
 
-    public ConEmuControl(ConEmuStartInfo startinfo, ToolWindow toolWindow, ToolWindowUtils toolWindowUtils)
-    {
-        addFocusListener(focusGained);
+    public ConEmuControl(ConEmuStartInfo startinfo, ToolWindow toolWindow, ToolWindowUtils toolWindowUtils) {
         this.setFocusable(true);
         this.setEnabled(true);
         this.setFocusTraversalKeysEnabled(true);
@@ -79,38 +76,46 @@ public class ConEmuControl extends Canvas {
         this.myToolWindowUtils = toolWindowUtils;
     }
 
-    FocusAdapter focusGained = new FocusAdapter() {
-        @Override
-        public void focusGained(FocusEvent e) {
-            super.focusGained(e);
-        }
-    };
-
     public GuiMacroResult setParentHWND(Pointer hwnd) {
-        if(session != null) {
+        if (session != null) {
             GuiMacroResult guiMacroResult = session.ExecuteGuiMacroTextSync("SetParentHWND " + Pointer.nativeValue(hwnd));
             return guiMacroResult;
         }
         return null;
     }
 
-    public void setFocus() {
-        if(session != null) {
-            this.myToolWindow.getComponent().requestFocus();
-            session.ExecuteGuiMacroTextSync("SetFocus");
+    public void setFocus(boolean force, boolean onlyParent) {
+        this.needsFocus = force;
+        if (session != null) {
+            Thread t = new Thread(() -> {
+                try {
+                    if (isForeground()) {
+                        if (!onlyParent) {
+                            session.ExecuteGuiMacroTextSync("SetFocus");
+                        }
+                        Thread.sleep(200);
+                        this.myToolWindow.getComponent().requestFocus();
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            });
+            t.start();
         }
     }
 
     public void removeFocus() {
-        int appThread = Kernel32.INSTANCE.GetCurrentThreadId();
-        WinDef.HWND ideHwnd = new WinDef.HWND(getComponentPointer(myToolWindowUtils.getMainFrame()));
-        int foregroundThread = User32Ext.INSTANCE.GetWindowThreadProcessId(ideHwnd, null);
-        User32Ext.INSTANCE.AttachThreadInput(foregroundThread, appThread, true);
-        User32Ext.INSTANCE.SetForegroundWindow(this.getHandle());
-        User32Ext.INSTANCE.SetForegroundWindow(ideHwnd);
-        User32Ext.INSTANCE.SetFocus(ideHwnd);
-        User32Ext.INSTANCE.AttachThreadInput(foregroundThread, appThread, false);
-        ToolWindowManager.getInstance(startinfo.getProject()).activateEditorComponent();
+        if (isForeground()) {
+            int appThread = Kernel32.INSTANCE.GetCurrentThreadId();
+            WinDef.HWND ideHwnd = new WinDef.HWND(getComponentPointer(myToolWindowUtils.getMainFrame()));
+            int foregroundThread = User32Ext.INSTANCE.GetWindowThreadProcessId(ideHwnd, null);
+            User32Ext.INSTANCE.AttachThreadInput(foregroundThread, appThread, true);
+            User32Ext.INSTANCE.SetForegroundWindow(this.getHandle());
+            User32Ext.INSTANCE.SetForegroundWindow(ideHwnd);
+            User32Ext.INSTANCE.SetFocus(ideHwnd);
+            User32Ext.INSTANCE.AttachThreadInput(foregroundThread, appThread, false);
+            ToolWindowManager.getInstance(startinfo.getProject()).activateEditorComponent();
+        }
     }
 
     public void resetParentHWND() {
@@ -120,10 +125,14 @@ public class ConEmuControl extends Canvas {
     @Override
     public void paint(Graphics g) {
         super.paint(g);
-        if(session == null) {
+        if (session == null) {
             createSession(this.startinfo);
         } else {
             this.resetParentHWND();
+        }
+        if (needsFocus) {
+            this.myToolWindow.getComponent().requestFocus();
+            this.setFocus(false, false);
         }
     }
 
@@ -145,14 +154,12 @@ public class ConEmuControl extends Canvas {
         });
     }
 
-    public ConEmuStartInfo getAutoStartInfo()
-    {
+    public ConEmuStartInfo getAutoStartInfo() {
         return _autostartinfo;
     }
 
-    public void setAutoStartInfo(ConEmuStartInfo value)
-    {
-        if(getState() != States.Unused)
+    public void setAutoStartInfo(ConEmuStartInfo value) {
+        if (getState() != States.Unused)
             throw new IllegalStateException("AutoStartInfo can only be changed before the first console emulator session runs in this control.");
 
         _autostartinfo = value;
@@ -160,57 +167,50 @@ public class ConEmuControl extends Canvas {
         // Invariant: if changed to TRUE past the normal AutoStartInfo checking point
         // TODO
         // if((value != null) && (IsHandleCreated))
-        if((value != null))
+        if ((value != null))
             Start(value);
     }
 
-    public boolean getIsStatusbarVisible()
-    {
+    public boolean getIsStatusbarVisible() {
         return _isStatusbarVisible;
     }
 
-    public void setIsStatusbarVisible(boolean value)
-    {
+    public void setIsStatusbarVisible(boolean value) {
         _isStatusbarVisible = value;
-        if(session != null) {
+        if (session != null) {
             session.beginGuiMacro("Status").withParam(0).withParam(value ? 1 : 2).executeAsync();
         }
     }
 
-    public Integer getLastExitCode()
-    {
+    public Integer getLastExitCode() {
         // Special case for just-exited payload: user might get the payload-exited event before us and call this property to get its exit code, while we have not recorded the fresh exit code yet
         // So call into the current session and fetch the actual value, if available (no need to write to field, will update in our event handler soon)
         ConEmuSession running = session;
-        if((running != null) && (running.isConsoleProcessExited()))
+        if ((running != null) && (running.isConsoleProcessExited()))
             return running.getConsoleProcessExitCode();
         return _nLastExitCode; // No console emulator open or current process still running in the console emulator, use prev exit code if there were
     }
 
     @NotNull
-    public ConEmuSession getRunningSession()
-    {
+    public ConEmuSession getRunningSession() {
         return session;
     }
 
-    public States getState()
-    {
+    public States getState() {
         return session != null ? (session.isConsoleProcessExited() ? States.ConsoleEmulatorEmpty : States.ConsoleEmulatorWithConsoleProcess) : (_nLastExitCode != null ? States.Recycled : States.Unused);
     }
 
-    public boolean getIsConsoleEmulatorOpen()
-    {
+    public boolean getIsConsoleEmulatorOpen() {
         return session != null;
     }
 
     @NotNull
-    public ConEmuSession Start(@NotNull ConEmuStartInfo startinfo)
-    {
-        if(startinfo == null)
+    public ConEmuSession Start(@NotNull ConEmuStartInfo startinfo) {
+        if (startinfo == null)
             throw new NullArgumentException("startinfo");
 
         // Close prev session if there is one
-        if(session != null)
+        if (session != null)
             throw new IllegalStateException("Cannot start a new console process because another console emulator session has failed to close in due time.");
 
         _autostartinfo = null; // As we're starting, no more chance for an autostart
@@ -224,9 +224,7 @@ public class ConEmuControl extends Canvas {
         session.waitForConsoleEmulatorCloseAsync().continueWith(task -> {
             try {
                 _nLastExitCode = session.getConsoleProcessExitCode();
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 // NOP
             }
             session = null;
@@ -236,14 +234,12 @@ public class ConEmuControl extends Canvas {
         return session;
     }
 
-    private void AssertNotRunning()
-    {
-        if(session != null)
+    private void AssertNotRunning() {
+        if (session != null)
             throw new IllegalStateException("This changes is not possible wen a console process is already running.");
     }
 
-    private HWND tryGetConEmuHwnd()
-    {
+    private HWND tryGetConEmuHwnd() {
         Pointer pConEmu = Pointer.NULL;
         HWND thisHwnd = getHandle();
         WNDENUMPROC proc = (hwnd, pointer) -> {
@@ -293,41 +289,38 @@ public class ConEmuControl extends Canvas {
         this.controlRemovedListener.remove(listener);
     }
 
-    public boolean isForeground()  {
-        if(getHandle() == null)
+    public boolean isFocused() {
+        if (getHandle() == null)
             return false;
+
         IceTermView iceTermView = IceTermView.getInstance(startinfo.getProject());
+        if (iceTermView == null) {
+            return false;
+        }
+
         HWND mainWindow = new HWND(getComponentPointer(myToolWindowUtils.getMainFrame()));
         WinDef.HWND foregroundHwnd = User32Ext.INSTANCE.GetForegroundWindow();
-        if(mainWindow.equals(foregroundHwnd)) {
-            return true;
-        }
 
         WinDef.HWND conemuHwnd = getHandle();
-        if(conemuHwnd.equals(foregroundHwnd)) {
+        if (conemuHwnd.equals(foregroundHwnd) || myToolWindow.getComponent().hasFocus()) {
             return true;
         }
+        return false;
+    }
 
-        if (!(getParent() instanceof JComponent)) {
+    public boolean isForeground() {
+        if (getHandle() == null)
             return false;
-        }
+
+        WinDef.HWND foregroundHwnd = User32Ext.INSTANCE.GetForegroundWindow();
 
         JRootPane conemuRootPane = ((JComponent) getParent()).getRootPane();
-        if(conemuRootPane == null) {
+
+        if (conemuRootPane == null) {
             return false;
         }
+
         WinDef.HWND conEmuRootHwnd = new HWND(getComponentPointer(conemuRootPane.getParent()));
-
-        int foregroundThread = User32Ext.INSTANCE.GetWindowThreadProcessId(foregroundHwnd, null);
-        int conEmuThread = User32Ext.INSTANCE.GetWindowThreadProcessId(conemuHwnd, null);
-        int appThread = Kernel32.INSTANCE.GetCurrentThreadId();
-        if(foregroundThread == appThread) {
-            return false;
-        }
-
-        if (foregroundThread == conEmuThread) {
-            return true;
-        }
 
         return conEmuRootHwnd.equals(foregroundHwnd);
     }
