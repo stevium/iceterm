@@ -20,7 +20,6 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.EventListener;
 import java.util.List;
-import java.util.function.Consumer;
 
 import static com.sun.jna.Native.getComponentPointer;
 
@@ -57,10 +56,13 @@ public class ConEmuControl extends Canvas {
     private ConEmuStartInfo startinfo;
 
     public void terminate() {
-        if (session != null) {
-            session.close();
+        if (this.isForeground()) {
+            if (session != null) {
+                session.close();
+                this.getParent().remove(this);
+            }
+            session = null;
         }
-        session = null;
     }
 
     public ConEmuSession getSession() {
@@ -84,28 +86,40 @@ public class ConEmuControl extends Canvas {
         return null;
     }
 
+    public void grabFocus() {
+        if (session != null) {
+            session.ExecuteGuiMacroTextSync("SetFocus");
+            System.out.println("GrabFocus");
+            this.myToolWindow.getComponent().grabFocus();
+        }
+    }
+
     public void setFocus(boolean force, boolean onlyParent) {
         this.needsFocus = force;
-        if (session != null) {
-            Thread t = new Thread(() -> {
-                try {
-                    if (isForeground()) {
-                        if (!onlyParent) {
-                            session.ExecuteGuiMacroTextSync("SetFocus");
-                        }
-                        Thread.sleep(200);
-                        this.myToolWindow.getComponent().requestFocus();
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            });
-            t.start();
+        if (session == null) {
+            return;
         }
+
+        Thread t = new Thread(() -> {
+            try {
+                Thread.sleep(20);
+                if (isForeground()) {
+                    System.out.println("SetFocus");
+                    if (!onlyParent) {
+                        session.ExecuteGuiMacroTextSync("SetFocus");
+                    }
+                    this.myToolWindow.getComponent().requestFocus();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+        t.start();
     }
 
     public void removeFocus() {
         if (isForeground()) {
+            System.out.println("RemoveFocus");
             int appThread = Kernel32.INSTANCE.GetCurrentThreadId();
             WinDef.HWND ideHwnd = new WinDef.HWND(getComponentPointer(myToolWindowUtils.getMainFrame()));
             int foregroundThread = User32Ext.INSTANCE.GetWindowThreadProcessId(ideHwnd, null);
@@ -322,17 +336,16 @@ public class ConEmuControl extends Canvas {
 
         WinDef.HWND conEmuRootHwnd = new HWND(getComponentPointer(conemuRootPane.getParent()));
 
+        if (myToolWindowUtils.getActiveFrame() == null) {
+            return false;
+        }
+
         return conEmuRootHwnd.equals(foregroundHwnd);
     }
 
     @Override
     public void removeNotify() {
-        this.controlRemovedListener.forEach(new Consumer<ControlRemovedListener>() {
-            @Override
-            public void accept(ControlRemovedListener controlRemovedListener) {
-                controlRemovedListener.onRemoved();
-            }
-        });
+        this.controlRemovedListener.forEach(ControlRemovedListener::onRemoved);
         super.removeNotify();
     }
 }

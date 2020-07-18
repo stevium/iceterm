@@ -96,8 +96,7 @@ public final class WinApi {
 
     private interface Kernel32MissingFunctions extends StdCallLibrary {
 
-        Kernel32MissingFunctions INSTANCE = (Kernel32MissingFunctions) Native.loadLibrary("kernel32",
-                Kernel32MissingFunctions.class, W32APIOptions.UNICODE_OPTIONS);
+        Kernel32MissingFunctions INSTANCE = Native.load("kernel32", Kernel32MissingFunctions.class, W32APIOptions.UNICODE_OPTIONS);
 
         public FOREIGN_THREAD_START_ROUTINE GetProcAddress(HMODULE hModule, String lpProcName);
 

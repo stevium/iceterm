@@ -49,9 +49,7 @@ class IceTermProjectOptionsProvider(val project: Project) : PersistentStateCompo
 
     private fun getDefaultWorkingDirectory(): String? {
         val roots = ProjectRootManager.getInstance(project).contentRoots
-        @Suppress("DEPRECATION")
-        val dir = if (roots.size == 1 && roots[0] != null && roots[0].isDirectory) roots[0] else project.baseDir
-        return dir?.canonicalPath
+        return if (roots.size == 1 && roots[0] != null && roots[0].isDirectory) roots[0]?.canonicalPath else project.basePath
     }
 
     companion object {

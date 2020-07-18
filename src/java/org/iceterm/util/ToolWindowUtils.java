@@ -6,6 +6,7 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.impl.ProjectFrameHelper;
 import org.apache.commons.lang.StringUtils;
 
+import javax.swing.FocusManager;
 import javax.swing.*;
 import java.awt.*;
 
@@ -71,5 +72,13 @@ public class ToolWindowUtils {
         return null;
     }
 
+    public Component getActiveFrame() {
+        if(FocusManager.getCurrentManager().getFocusedWindow() instanceof IdeFrame) {
+            return FocusManager.getCurrentManager().getFocusedWindow();
+        } else if (FocusManager.getCurrentManager().getFocusedWindow() != null){
+            return FocusManager.getCurrentManager().getFocusedWindow().getParent();
+        }
+        return null;
+    }
 
 }

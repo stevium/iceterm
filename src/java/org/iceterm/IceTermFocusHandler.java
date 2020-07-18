@@ -13,6 +13,7 @@ import org.iceterm.ceintegration.ConEmuControl;
 import org.iceterm.util.ToolWindowUtils;
 import org.jetbrains.annotations.NotNull;
 
+import javax.swing.FocusManager;
 import java.awt.*;
 import java.awt.event.AWTEventListener;
 import java.awt.event.MouseEvent;
@@ -36,14 +37,14 @@ public class IceTermFocusHandler implements AnActionListener, ToolWindowManagerL
     @Override
     public void beforeActionPerformed(@NotNull AnAction action, @NotNull DataContext dataContext, AnActionEvent event) {
         if (action instanceof ActivateToolWindowAction) {
-            if (((ActivateToolWindowAction) action).getToolWindowId().equals(myToolWindow.getId())) {
-                myConEmuControl.setFocus(true, false);
+            if (((ActivateToolWindowAction) action).getToolWindowId().equals(myToolWindow.getId()) && myToolWindowUtils.getMainFrame().isActive()) {
+                myConEmuControl.grabFocus();
             }
         }
     }
 
     @Override
-     public void stateChanged(@NotNull ToolWindowManager toolWindowManager) {
+    public void stateChanged(@NotNull ToolWindowManager toolWindowManager) {
         if (myToolWindow.isDisposed()) return;
 
         boolean visible = myToolWindow.isVisible();
@@ -52,12 +53,19 @@ public class IceTermFocusHandler implements AnActionListener, ToolWindowManagerL
             return;
         }
 
-        boolean isInToolWindow = myToolWindowUtils.isInToolWindow(toolWindowManager.getFocusManager().getFocusOwner());
-
-        if (!wasVisible || isInToolWindow) {
-            myConEmuControl.setFocus(true, false);
-            wasVisible = true;
-        }
+        Thread t = new Thread(() -> {
+            try {
+                Thread.sleep(20);
+                boolean isInToolWindow = myToolWindowUtils.isInToolWindow(FocusManager.getCurrentManager().getFocusOwner());
+                if (!wasVisible || isInToolWindow) {
+                    myConEmuControl.setFocus(true, false);
+                    wasVisible = true;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+        t.start();
     }
 
     @Override

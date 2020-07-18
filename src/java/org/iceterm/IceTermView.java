@@ -2,11 +2,13 @@ package org.iceterm;
 
 import com.intellij.openapi.actionSystem.ex.AnActionListener;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectManager;
+import com.intellij.openapi.project.VetoableProjectManagerListener;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.wm.IdeFrame;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.openapi.wm.ex.ToolWindowManagerListener;
-import com.intellij.openapi.wm.impl.IdeFrameImpl;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import com.intellij.ui.content.ContentManager;
@@ -116,6 +118,21 @@ public class IceTermView {
     }
 
     private void addListeners() {
+        myToolWindow.getComponent().setFocusable(true);
+        myToolWindow.getComponent().setRequestFocusEnabled(true);
+
+        ProjectManager.getInstance().addProjectManagerListener(new VetoableProjectManagerListener() {
+            @Override
+            public boolean canClose(@NotNull Project project) {
+                return true;
+            }
+
+            @Override
+            public void projectClosed(@NotNull Project project) {
+                conEmuControl.terminate();
+            }
+        });
+
         conEmuControl.addControlRemovedListener(this::saveTempHwnd);
 
         myProject.getMessageBus().connect().subscribe(AnActionListener.TOPIC, focusHandler);
@@ -134,12 +151,12 @@ public class IceTermView {
 
         if (hiddenHandle == null) {
             for (Frame frame : frames) {
-                if (frame instanceof IdeFrameImpl) {
+                if (frame instanceof IdeFrame) {
                     hiddenHandle = new Panel();
                     hiddenHandle.setVisible(false);
                     hiddenHandle.setLocation(400, 400);
                     hiddenHandle.setPreferredSize(new Dimension(1,1));
-                    ((IdeFrameImpl) frame).getRootPane().add(hiddenHandle, BorderLayout.CENTER);
+                    myToolWindowUtils.getMainFrame().getRootPane().add(hiddenHandle, BorderLayout.CENTER);
                 }
             }
         }

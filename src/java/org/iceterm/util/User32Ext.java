@@ -13,7 +13,7 @@ public interface User32Ext extends User32 {
 	 * @uml.property  name="iNSTANCE"
 	 * @uml.associationEnd
 	 */
-    public static User32Ext INSTANCE = (User32Ext) Native.loadLibrary("User32", User32Ext.class, W32APIOptions.DEFAULT_OPTIONS);
+    public static User32Ext INSTANCE = Native.load("User32", User32Ext.class, W32APIOptions.DEFAULT_OPTIONS);
 
     /**
      *  Parameters

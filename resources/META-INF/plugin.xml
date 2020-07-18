@@ -1,7 +1,7 @@
 <idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
   <id>org.jetbrains.plugins.iceterm</id>
   <name>IceTerm</name>
-  <version>0.0.11</version>
+  <version>0.0.12</version>
   <vendor email="milos@mstevanovic.net" url="http://www.stevium.com">Stevium</vendor>
   <description><![CDATA[
       IceTerm is a plugin for integrating ConEmu terminal emulator as a tool window inside IntelliJ platform based IDEs.
@@ -9,6 +9,7 @@
 
   <change-notes><![CDATA[
       <ul>
+          <li>Add support for different ConEmu instance per different IDE Frame instance</li>
           <li>Enable Tabs and TabBar functionality</li>
           <li>Add ConEmu XML path option in plugin setting</li>
           <li>Fix rendering issues in "Distraction free mode"</li>
