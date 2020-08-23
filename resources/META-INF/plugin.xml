@@ -1,19 +1,35 @@
 <idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
   <id>org.jetbrains.plugins.iceterm</id>
   <name>IceTerm</name>
-  <version>0.0.12</version>
+  <version>0.0.15</version>
   <vendor email="milos@mstevanovic.net" url="http://www.stevium.com">Stevium</vendor>
   <description><![CDATA[
-      IceTerm is a plugin for integrating ConEmu terminal emulator as a tool window inside IntelliJ platform based IDEs.
+      <p><a href="https://plugins.jetbrains.com/plugin/13014-iceterm">IceTerm</a> is a plugin for integrating <a href="https://conemu.github.io">ConEmu</a> as a tool window inside IntelliJ platform based IDEs.</p>
+      <p>The plugin comes with an integrated <code>ConEmu</code> version, so just installing it and running the <code>IceTerm</code> command should be enough to get everything started. </p>
+      <p>Compatible with the versions of ConEmu <code>v19.10.12</code> and above. </p>
+      <h4 id="available-commands-">Available commands:</h3>
+      <ul>
+          <li><code>IceTerm</code> - Toggles the visibility of the tool window</li>
+          <li><code>Open in IceTerm</code> - Open file location in current ConEmu tab</li>
+          <li><code>Open in new IceTerm Tab</code> - Open file location in new ConEmu tab</li>
+      </ul>
+      <h4 id="project-settings-">Project Settings:</h3>
+      <ul>
+          <li><code>Start directory</code> - a project specific directory in which to start ConEmu</li>
+      </ul>
+      <h4 id="application-settings-">Application Settings:</h3>
+      <ul>
+          <li><code>ConEmu executable path</code> - path to ConEmu.exe</li>
+          <li><code>Start Task</code> - a predefined task, or a command to run on Startup - <code>{cmd}</code> by default</li>
+          <li><code>Escape key</code> - a key used to switch focus back to IDE - <code>ESC</code> by default</li>
+      </ul>
     ]]></description>
 
   <change-notes><![CDATA[
       <ul>
-          <li>Add support for different ConEmu instance per different IDE Frame instance</li>
-          <li>Enable Tabs and TabBar functionality</li>
-          <li>Add ConEmu XML path option in plugin setting</li>
-          <li>Fix rendering issues in "Distraction free mode"</li>
-          <li>Fix ConEmu Windows to work without interruptions which were happening before due to Focus issues</li>
+          <li>Rename "Open In ConEmu" to "Open In IceTerm"</li>
+          <li>Change default ConEmu tabs placement to bottom</li>
+          <li>Add more detailed plugin description</li>
       </ul>
     ]]>
   </change-notes>

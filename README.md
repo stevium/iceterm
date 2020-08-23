@@ -14,9 +14,9 @@ The plugin can be installed from either the IDE by using the `Plugin Marketlace`
 
 ### Available commands:
 
-* `IceTerm` - toggles the visibility of the tool window
-* `Open in ConEmu` - opens ConEmu in selected file/folder
-* `Open in new ConEmu Tab` - opens new tab in selected file/folder
+* `IceTerm` - Toggles the visibility of the tool window
+* `Open in IceTerm` - Open file location in current ConEmu tab
+* `Open in new IceTerm Tab` - Open file location in new ConEmu tab
 
 ### Project Settings: 
 
